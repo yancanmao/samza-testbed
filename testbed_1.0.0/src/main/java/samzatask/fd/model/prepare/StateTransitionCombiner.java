@@ -2,7 +2,7 @@ package samzatask.fd.model.prepare;
 
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
-import samzatask.fd.model.data.Tuple;
+import samzatask.data.Tuple;
 
 import java.io.IOException;
 

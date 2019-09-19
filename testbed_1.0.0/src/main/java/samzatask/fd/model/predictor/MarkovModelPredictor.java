@@ -20,10 +20,10 @@ package samzatask.fd.model.predictor;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import samzatask.fd.model.config.Configuration;
-import samzatask.fd.model.config.FraudDetectionConstants.*;
-import samzatask.fd.model.config.FraudDetectionConstants;
-import samzatask.fd.model.data.Pair;
+import samzatask.config.Configuration;
+import samzatask.config.FraudDetectionConstants.*;
+import samzatask.config.FraudDetectionConstants;
+import samzatask.data.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;

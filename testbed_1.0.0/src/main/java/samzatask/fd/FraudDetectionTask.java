@@ -1,8 +1,6 @@
 package samzatask.fd;
 
 import org.apache.samza.context.Context;
-import org.apache.samza.storage.kv.Entry;
-import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.OutgoingMessageEnvelope;
@@ -11,7 +9,7 @@ import org.apache.samza.task.InitableTask;
 import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
-import samzatask.fd.model.config.Configuration;
+import samzatask.config.Configuration;
 import samzatask.fd.model.predictor.MarkovModelPredictor;
 import samzatask.fd.model.predictor.ModelBasedPredictor;
 import samzatask.fd.model.predictor.Prediction;
@@ -30,14 +28,14 @@ public class FraudDetectionTask implements StreamTask, InitableTask {
 
     @Override
     public void init(Context context) throws Exception {
-        this.store = (KeyValueStore<String, String>) context.getTaskContext().getStore("fraud-detection");
-        System.out.println("Contents of store: ");
-        KeyValueIterator<String, String> iter = store.all();
-        while (iter.hasNext()) {
-            Entry<String, String> entry = iter.next();
-            System.out.println(entry.getKey() + " => " + entry.getValue());
-        }
-        iter.close();
+//        this.store = (KeyValueStore<String, String>) context.getTaskContext().getStore("fraud-detection");
+//        System.out.println("Contents of store: ");
+//        KeyValueIterator<String, String> iter = store.all();
+//        while (iter.hasNext()) {
+//            Entry<String, String> entry = iter.next();
+//            System.out.println(entry.getKey() + " => " + entry.getValue());
+//        }
+//        iter.close();
 
         String cfg = String.format(CFG_PATH, "fraud-detection");
         Properties p = loadProperties(cfg, true);

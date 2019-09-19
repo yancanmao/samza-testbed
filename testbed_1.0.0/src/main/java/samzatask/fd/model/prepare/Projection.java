@@ -30,9 +30,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import samzatask.fd.model.data.SecondarySort;
-import samzatask.fd.model.data.Tuple;
-import samzatask.fd.model.data.Utility;
+import samzatask.data.SecondarySort;
+import samzatask.data.Tuple;
+import samzatask.data.Utility;
 
 import java.io.IOException;
 

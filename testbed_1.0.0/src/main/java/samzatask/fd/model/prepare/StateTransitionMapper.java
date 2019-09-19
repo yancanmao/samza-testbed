@@ -5,7 +5,7 @@ import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
-import samzatask.fd.model.data.Tuple;
+import samzatask.data.Tuple;
 
 import java.io.IOException;
 
