@@ -18,8 +18,7 @@ public class SentimentClassifierFactory {
                 classifier = new BasicClassifier();
                 break;
             case LINGPIPE:
-                classifier = new LingPipeClassifier();
-                break;
+                throw new IllegalArgumentException("There is not sentiment classifier named " + classifierName);
             default:
                 throw new IllegalArgumentException("There is not sentiment classifier named " + classifierName);
         }
