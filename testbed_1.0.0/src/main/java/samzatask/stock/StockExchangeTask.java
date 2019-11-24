@@ -1,34 +1,42 @@
-package samzaapps.stock;
+package samzatask.stock;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
-import java.io.*;
-import java.net.URI;
-import java.util.*;
-
-import joptsimple.OptionSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.samza.application.StreamApplication;
-import org.apache.samza.application.descriptors.StreamApplicationDescriptor;
-import org.apache.samza.config.Config;
-import org.apache.samza.operators.KV;
-import org.apache.samza.operators.MessageStream;
-import org.apache.samza.operators.OutputStream;
-import org.apache.samza.runtime.LocalApplicationRunner;
-import org.apache.samza.serializers.KVSerde;
-import org.apache.samza.serializers.Serde;
-import org.apache.samza.serializers.StringSerde;
-import org.apache.samza.system.kafka.descriptors.KafkaInputDescriptor;
-import org.apache.samza.system.kafka.descriptors.KafkaOutputDescriptor;
-import org.apache.samza.system.kafka.descriptors.KafkaSystemDescriptor;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.samza.util.CommandLine;
+import org.apache.hadoop.fs.Path;
+import org.apache.samza.context.Context;
+import org.apache.samza.operators.KV;
+import org.apache.samza.storage.kv.Entry;
+import org.apache.samza.storage.kv.KeyValueIterator;
+import org.apache.samza.storage.kv.KeyValueStore;
+import org.apache.samza.system.IncomingMessageEnvelope;
+import org.apache.samza.system.OutgoingMessageEnvelope;
+import org.apache.samza.system.SystemStream;
+import org.apache.samza.task.InitableTask;
+import org.apache.samza.task.MessageCollector;
+import org.apache.samza.task.StreamTask;
+import org.apache.samza.task.TaskCoordinator;
 
-public class StockExchange implements StreamApplication {
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+
+/**
+ * This is a simple task that writes each message to a state store and prints them all out on reload.
+ *
+ * It is useful for command line testing with the kafka console producer and consumer and text messages.
+ */
+public class StockExchangeTask implements StreamTask, InitableTask {
+
+
+
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -37,66 +45,41 @@ public class StockExchange implements StreamApplication {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    Map<String, Float> stockAvgPriceMap = new HashMap<String, Float>();
-
-    private static final String KAFKA_SYSTEM_NAME = "kafka";
-    private static final List<String> KAFKA_CONSUMER_ZK_CONNECT = ImmutableList.of("localhost:2181");
-    private static final List<String> KAFKA_PRODUCER_BOOTSTRAP_SERVERS = ImmutableList.of("localhost:9092");
-    private static final Map<String, String> KAFKA_DEFAULT_STREAM_CONFIGS = ImmutableMap.of("replication.factor", "1");
-
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
     Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
     Map<String, List<Float>> poolPrice = new HashMap<>();
 
-    private static final String INPUT_STREAM_ID = "stock_order";
-    private static final String OUTPUT_STREAM_ID = "stock";
 
-    @Override
-    public void describe(StreamApplicationDescriptor streamApplicationDescriptor) {
+    private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_price");
+    private KeyValueStore<String, String> stockAvgPriceMap;
 
+    @SuppressWarnings("unchecked")
+    public void init(Context context) {
         loadPool();
+    }
 
-        Serde serde = KVSerde.of(new StringSerde(), new StringSerde());
+    public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
+        String stockOrder = (String) envelope.getMessage();
+        String[] orderArr = stockOrder.split("\\|");
+        Order order = new Order(stockOrder);
+        //filter
+        if (orderArr[Tran_Maint_Code] == FILTER_KEY1 || orderArr[Tran_Maint_Code] == FILTER_KEY2) {
+            return;
+        }
+        // do transaction
+        List<String> xactResult = mapFunction(pool, poolPrice, order);
+        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, xactResult.toString()));
+    }
 
-        KafkaSystemDescriptor kafkaSystemDescriptor = new KafkaSystemDescriptor(KAFKA_SYSTEM_NAME)
-                .withConsumerZkConnect(KAFKA_CONSUMER_ZK_CONNECT)
-                .withProducerBootstrapServers(KAFKA_PRODUCER_BOOTSTRAP_SERVERS)
-                .withDefaultStreamConfigs(KAFKA_DEFAULT_STREAM_CONFIGS);
-
-        KafkaInputDescriptor<KV<String, String>> inputDescriptor =
-                kafkaSystemDescriptor.getInputDescriptor(INPUT_STREAM_ID,
-                        serde);
-
-
-        KafkaOutputDescriptor<KV<String, String>> outputDescriptor =
-                kafkaSystemDescriptor.getOutputDescriptor(OUTPUT_STREAM_ID,
-                        serde);
-
-        MessageStream<KV<String, String>> inputStream = streamApplicationDescriptor.getInputStream(inputDescriptor);
-        OutputStream<KV<String, String>> outputStream = streamApplicationDescriptor.getOutputStream(outputDescriptor);
-
-        inputStream
-                .map((tuple)->{
-                    // String[] orderList = tuple.split("\\|");
-                    Order order = new Order(tuple.value);
-                    return order;
-                })
-//                .map(order -> {
-//                    String[] orderArr = order.getValue().split("\\|");
-//                    return new KV(order.getKey(), orderArr);
-//                })
-                .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
-                .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
-                .map((order)->{
-                    return this.mapFunction(pool, poolPrice, order);
-                })
-                .filter((tradeResult) -> !tradeResult.isEmpty())
-                .map(list -> KV.of("traded", list.toString()))
-                .sendTo(outputStream);
-//                .map((KV m) -> movingAverage(m))
-//                .sendTo(outputStream);
+    private String computeAverage(String[] orderArr) {
+        if (this.stockAvgPriceMap.get(orderArr[Sec_Code]) == null) {
+            stockAvgPriceMap.put(orderArr[Sec_Code], String.valueOf(0));
+        }
+        float sum = Float.parseFloat(stockAvgPriceMap.get(orderArr[Sec_Code])) + Float.parseFloat(orderArr[Order_Price]);
+        stockAvgPriceMap.put(orderArr[Sec_Code], String.valueOf(sum));
+        return orderArr[Sec_Code] + ": " + String.valueOf(sum);
     }
 
     /**
@@ -154,16 +137,6 @@ public class StockExchange implements StreamApplication {
         }
 
         System.out.println("loading complete");
-    }
-
-    private KV<String, String> movingAverage(KV m) {
-        String[] orderArr = (String[]) m.getValue();
-        if (!stockAvgPriceMap.containsKey(orderArr[Sec_Code])) {
-            stockAvgPriceMap.put(orderArr[Sec_Code], (float) 0);
-        }
-        float sum = stockAvgPriceMap.get(orderArr[Sec_Code]) + Float.parseFloat(orderArr[Order_Price]);
-        stockAvgPriceMap.put(orderArr[Sec_Code], sum);
-        return new KV(m.getKey(), String.valueOf(sum));
     }
 
     /**

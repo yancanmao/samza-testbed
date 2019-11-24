@@ -255,7 +255,7 @@
                     <version>0.9</version>
                     <configuration>
                         <excludes>
-                            <exclude>**/*.patch</exclude>
+                            <exclude>**/*.*</exclude>
                             <exclude>**/*.txt</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>**/*.json</exclude>
