@@ -70,13 +70,13 @@ public class KafkaPersonGenerator {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("bid");
+        String TOPIC = new String("person");
         int rate = 1;
         if (args.length > 0) {
             TOPIC = args[0];
             rate = Integer.parseInt(args[2]);
         }
-        new KafkaBidGenerator(TOPIC).generate(rate);
+        new KafkaPersonGenerator(TOPIC).generate(rate);
     }
 }
 

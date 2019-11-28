@@ -47,6 +47,8 @@ public class KafkaAuctionGenerator {
                         config.timestampAndInterEventDelayUsForEvent(
                                 config.nextEventNumber(eventsCountSoFar)).getKey();
 
+                System.out.println(AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config).toString());
+
 //                ProducerRecord<Long, Auction> newRecord = new ProducerRecord<Long, Auction>(TOPIC, nextId,
 //                        AuctionGenerator.nextAuction(eventsCountSoFar, nextId, rnd, eventTimestamp, config));
                 ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, nextId,
