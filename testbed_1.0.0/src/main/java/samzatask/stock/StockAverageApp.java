@@ -24,7 +24,7 @@ public class StockAverageApp implements TaskApplication {
     private static final List<String> KAFKA_PRODUCER_BOOTSTRAP_SERVERS = ImmutableList.of("localhost:9092");
     private static final Map<String, String> KAFKA_DEFAULT_STREAM_CONFIGS = ImmutableMap.of("replication.factor", "1");
 
-    private static final String INPUT_STREAM_ID = "stock_order";
+    private static final String INPUT_STREAM_ID = "stock_cj";
     private static final String OUTPUT_STREAM_ID = "stock_price";
 
     @Override

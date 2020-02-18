@@ -34,9 +34,6 @@ import java.util.Map;
  * It is useful for command line testing with the kafka console producer and consumer and text messages.
  */
 public class StockExchangeTask implements StreamTask, InitableTask {
-
-
-
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -48,29 +45,43 @@ public class StockExchangeTask implements StreamTask, InitableTask {
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
-    Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
-    Map<String, List<Float>> poolPrice = new HashMap<>();
+    private Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
+    private Map<String, List<Float>> poolPrice = new HashMap<>();
 
 
-    private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_price");
+    private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
     private KeyValueStore<String, String> stockAvgPriceMap;
 
     @SuppressWarnings("unchecked")
     public void init(Context context) {
-        loadPool();
+//        loadPool();
+//        this.stockAvgPriceMap = (KeyValueStore<String, String>) context.getTaskContext().getStore("stock-average");
+//        System.out.println("Contents of store: ");
+//        KeyValueIterator<String, String> iter = stockAvgPriceMap.all();
+//        while (iter.hasNext()) {
+//            Entry<String, String> entry = iter.next();
+//            System.out.println(entry.getKey() + " => " + entry.getValue());
+//        }
+//        iter.close();
     }
 
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
         Order order = new Order(stockOrder);
+
+//        Long start = System.nanoTime();
+//        while (System.nanoTime() - start < 1000000) {}
+
         //filter
-        if (orderArr[Tran_Maint_Code] == FILTER_KEY1 || orderArr[Tran_Maint_Code] == FILTER_KEY2) {
+        if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
             return;
         }
         // do transaction
-        List<String> xactResult = mapFunction(pool, poolPrice, order);
-        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, xactResult.toString()));
+        List<String> xactResult = stockExchange(pool, poolPrice, order);
+
+//        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, KV.of(order.getSecCode(), xactResult.toString())));
+        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, order.getSecCode(), stockOrder));
     }
 
     private String computeAverage(String[] orderArr) {
@@ -144,9 +155,9 @@ public class StockExchangeTask implements StreamTask, InitableTask {
      * @param poolB,poolS,pool,order
      * @return output string
      */
-    public List<String> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
-                                    List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
-                                    Map<String, Map<Float, List<Order>>> pool, Order order) {
+    private List<String> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
+                                     List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
+                                     Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
         int top = 0;
         int i = 0;
@@ -211,7 +222,7 @@ public class StockExchangeTask implements StreamTask, InitableTask {
      * @param pool, order
      * @return String
      */
-    public List<String> mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
+    private List<String> stockExchange(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
         // String complete = new String();
         List<String> tradeResult = new ArrayList<>();
         // load poolS poolB

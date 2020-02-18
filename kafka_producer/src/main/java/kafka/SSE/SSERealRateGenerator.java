@@ -10,10 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static java.lang.Thread.sleep;
+
 /**
  * SSE generaor
  */
-public class SSEGenerator {
+public class SSERealRateGenerator {
 
     private String TOPIC;
 
@@ -27,7 +29,7 @@ public class SSEGenerator {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    public SSEGenerator(String input) {
+    public SSERealRateGenerator(String input) {
         TOPIC = input;
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
@@ -39,7 +41,9 @@ public class SSEGenerator {
 
     }
 
-    public void generate(String file, int speed) throws InterruptedException {
+    public void generate() throws InterruptedException {
+
+        int REPEAT = 10;
 
         String sCurrentLine;
         List<String> textList = new ArrayList<>();
@@ -51,33 +55,40 @@ public class SSEGenerator {
         long start = 0;
         long interval = 0;
         int counter = 0;
+
+        int end_count = 0;
+
         try {
             stream = new FileReader("/root/SSE-kafka-producer/partition1.txt");
             br = new BufferedReader(stream);
 
-            interval = 1000000000/speed;
-            start = System.nanoTime();
+            start = System.currentTimeMillis();
 
             while ((sCurrentLine = br.readLine()) != null) {
 
-                cur = System.nanoTime();
                 if (sCurrentLine.equals("end")) {
-                    continue;
+                    System.out.println("output rate: " + counter);
+                    counter = 0;
+                    end_count ++;
+                    cur = System.currentTimeMillis();
+                    if (cur-start < 1000) {
+                        sleep(1000 - (cur - start));
+                    }
+                    start = System.currentTimeMillis();
                 }
 
                 if (sCurrentLine.split("\\|").length < 10) {
                     continue;
                 }
 
-                ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-                producer.send(newRecord);
-                counter++;
+//                if (end_count <= 10) {
+//                    continue;
+//                }
 
-                while ((System.nanoTime() - cur) < interval) {}
-                if (System.nanoTime() - start >= 1000000000) {
-                    System.out.println("output rate: " + counter);
-                    counter = 0;
-                    start = System.nanoTime();
+                for (int i=0; i< REPEAT; i++) {
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+                    producer.send(newRecord);
+                    counter++;
                 }
             }
         } catch (IOException e) {
@@ -95,15 +106,15 @@ public class SSEGenerator {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("stock_cj");
+        String TOPIC = new String("stock_sb");
         String file = new String("partition1");
-        int speed = 1000;
+        int speed = 1;
         if (args.length > 0) {
             TOPIC = args[0];
             file = args[1];
             speed = Integer.parseInt(args[2]);
         }
-        new SSEGenerator(TOPIC).generate(file, speed);
+        new SSERealRateGenerator(TOPIC).generate();
     }
 }
 

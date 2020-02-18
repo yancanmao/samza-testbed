@@ -50,8 +50,8 @@ public class StockExchange implements StreamApplication {
     Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
     Map<String, List<Float>> poolPrice = new HashMap<>();
 
-    private static final String INPUT_STREAM_ID = "stock_order";
-    private static final String OUTPUT_STREAM_ID = "stock";
+    private static final String INPUT_STREAM_ID = "stock_input";
+    private static final String OUTPUT_STREAM_ID = "stock_output";
 
     @Override
     public void describe(StreamApplicationDescriptor streamApplicationDescriptor) {
@@ -90,7 +90,7 @@ public class StockExchange implements StreamApplication {
                 .filter((order) -> !FILTER_KEY2.equals(order.getTranMaintCode()))
                 .filter((order) -> !FILTER_KEY3.equals(order.getTranMaintCode()))
                 .map((order)->{
-                    return this.mapFunction(pool, poolPrice, order);
+                    return this.stockExchange(pool, poolPrice, order);
                 })
                 .filter((tradeResult) -> !tradeResult.isEmpty())
                 .map(list -> KV.of("traded", list.toString()))
@@ -238,7 +238,7 @@ public class StockExchange implements StreamApplication {
      * @param pool, order
      * @return String
      */
-    public List<String> mapFunction(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
+    public List<String> stockExchange(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
         // String complete = new String();
         List<String> tradeResult = new ArrayList<>();
         // load poolS poolB
