@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-
+import org.apache.flink.api.java.utils.ParameterTool;
 import static java.lang.Thread.sleep;
 
 /**
@@ -41,9 +41,7 @@ public class SSERealRateGenerator {
 
     }
 
-    public void generate() throws InterruptedException {
-
-        int REPEAT = 10;
+    public void generate(String FILE, int REPEAT) throws InterruptedException {
 
         String sCurrentLine;
         List<String> textList = new ArrayList<>();
@@ -53,13 +51,10 @@ public class SSERealRateGenerator {
         int sent_sentences = 0;
         long cur = 0;
         long start = 0;
-        long interval = 0;
         int counter = 0;
 
-        int end_count = 0;
-
         try {
-            stream = new FileReader("/root/SSE-kafka-producer/partition1.txt");
+            stream = new FileReader(FILE);
             br = new BufferedReader(stream);
 
             start = System.currentTimeMillis();
@@ -69,10 +64,11 @@ public class SSERealRateGenerator {
                 if (sCurrentLine.equals("end")) {
                     System.out.println("output rate: " + counter);
                     counter = 0;
-                    end_count ++;
                     cur = System.currentTimeMillis();
                     if (cur-start < 1000) {
                         sleep(1000 - (cur - start));
+                    } else {
+                        System.out.println("rate exceeds 1 second.");
                     }
                     start = System.currentTimeMillis();
                 }
@@ -106,15 +102,14 @@ public class SSERealRateGenerator {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("stock_sb");
-        String file = new String("partition1");
-        int speed = 1;
-        if (args.length > 0) {
-            TOPIC = args[0];
-            file = args[1];
-            speed = Integer.parseInt(args[2]);
-        }
-        new SSERealRateGenerator(TOPIC).generate();
+        // Checking input parameters
+        final ParameterTool params = ParameterTool.fromArgs(args);
+
+        String TOPIC = params.get("topic", "stock_sb");
+        String FILE = params.get("fp", "/root/SSE-kafka-producer/partition1.txt");
+        int REPEAT = params.getInt("repeat", 10);
+
+        new SSERealRateGenerator(TOPIC).generate(FILE, REPEAT);
     }
 }
 
