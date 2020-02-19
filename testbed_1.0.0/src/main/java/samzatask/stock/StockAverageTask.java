@@ -52,8 +52,8 @@ public class StockAverageTask implements StreamTask, InitableTask {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
 
-        Long start = System.nanoTime();
-        while (System.nanoTime() - start < 500000) {}
+//        Long start = System.nanoTime();
+//        while (System.nanoTime() - start < 500000) {}
 
         String average = computeAverage(orderArr);
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, average));

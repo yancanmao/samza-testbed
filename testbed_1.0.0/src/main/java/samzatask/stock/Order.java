@@ -23,34 +23,19 @@ class Order {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    // private String orderNo = new String();
-    // private String tranMaintCode = new String();
-    // private String orderPrice = new String();
-    // private String orderExecVol = new String();
-    // private String orderVol = new String();
-    // private String secCode = new String();
-    // private String tradeDir = new String();
     private Map<String, String> orderMap = new HashMap<String, String>();
 
-    Order(String tuple) {
-        //String[] orderList = tuple.split("\\|");
-        String orderNo = new String(tuple.split("\\|")[Order_No]);
-        String tranMaintCode = new String(tuple.split("\\|")[Tran_Maint_Code]);
+    Order(String[] orderArr) {
+        String orderNo = orderArr[Order_No];
+        String tranMaintCode = orderArr[Tran_Maint_Code];
         orderMap.put("Order_No", orderNo);
         orderMap.put("Tran_Maint_Code", tranMaintCode);
         if (!tranMaintCode.equals("")) {
-            // orderPrice = new String(tuple.split("\\|")[Order_Price]);
-            // orderExecVol = new String(tuple.split("\\|")[Order_Exec_Vol]);
-            // orderVol = new String(tuple.split("\\|")[Order_Vol]);
-            // secCode = new String(tuple.split("\\|")[Sec_Code]);
-            // tradeDir = new String(tuple.split("\\|")[Trade_Dir]);
-            // orderMap.put("Order_No", orderNo);
-            // orderMap.put("Tran_Maint_Code", tranMaintCode);
-            orderMap.put("Order_Price", new String(tuple.split("\\|")[Order_Price]));
-            orderMap.put("Order_Exec_Vol", new String(tuple.split("\\|")[Order_Exec_Vol]));
-            orderMap.put("Order_Vol", new String(tuple.split("\\|")[Order_Vol]));
-            orderMap.put("Sec_Code", new String(tuple.split("\\|")[Sec_Code]));
-            orderMap.put("Trade_Dir", new String(tuple.split("\\|")[Trade_Dir]));
+            orderMap.put("Order_Price", orderArr[Order_Price]);
+            orderMap.put("Order_Exec_Vol", orderArr[Order_Exec_Vol]);
+            orderMap.put("Order_Vol", orderArr[Order_Vol]);
+            orderMap.put("Sec_Code", orderArr[Sec_Code]);
+            orderMap.put("Trade_Dir", orderArr[Trade_Dir]);
         }
     }
 

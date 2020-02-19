@@ -53,6 +53,8 @@ public class SSERealRateGenerator {
         long start = 0;
         int counter = 0;
 
+        int noRecSleepCnt = 0;
+
         try {
             stream = new FileReader(FILE);
             br = new BufferedReader(stream);
@@ -62,11 +64,15 @@ public class SSERealRateGenerator {
             while ((sCurrentLine = br.readLine()) != null) {
 
                 if (sCurrentLine.equals("end")) {
+                    if (counter == 0) {
+                        noRecSleepCnt++;
+                        System.out.println("no record in this sleep !" + noRecSleepCnt);
+                    }
                     System.out.println("output rate: " + counter);
                     counter = 0;
                     cur = System.currentTimeMillis();
                     if (cur-start < 1000) {
-                        sleep(1000 - (cur - start));
+//                        sleep(1000 - (cur - start));
                     } else {
                         System.out.println("rate exceeds 1 second.");
                     }
@@ -81,11 +87,11 @@ public class SSERealRateGenerator {
 //                    continue;
 //                }
 
-                for (int i=0; i< REPEAT; i++) {
-                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-                    producer.send(newRecord);
+//                for (int i=0; i< REPEAT; i++) {
+//                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+//                    producer.send(newRecord);
                     counter++;
-                }
+//                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,6 +114,8 @@ public class SSERealRateGenerator {
         String TOPIC = params.get("topic", "stock_sb");
         String FILE = params.get("fp", "/root/SSE-kafka-producer/partition1.txt");
         int REPEAT = params.getInt("repeat", 10);
+
+        System.out.println(TOPIC + FILE + REPEAT);
 
         new SSERealRateGenerator(TOPIC).generate(FILE, REPEAT);
     }
