@@ -28,6 +28,7 @@ class Order {
     Order(String[] orderArr) {
         String orderNo = orderArr[Order_No];
         String tranMaintCode = orderArr[Tran_Maint_Code];
+
         orderMap.put("Order_No", orderNo);
         orderMap.put("Tran_Maint_Code", tranMaintCode);
         if (!tranMaintCode.equals("")) {
