@@ -1,5 +1,6 @@
 package samzatask.stock;
 
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -476,14 +477,14 @@ public class StockExchangeSimu {
         FileReader stream = null;
         // // for loop to generate message
         BufferedReader br = null;
-
-
         int noRecSleepCnt = 0;
-
         stream = new FileReader("/root/SSE-kafka-producer/partition1.txt");
         br = new BufferedReader(stream);
 
         int interval = 1000000000/1000;
+
+        RandomDataGenerator randomGen = new RandomDataGenerator();
+
 
         while ((sCurrentLine = br.readLine()) != null) {
 
@@ -500,7 +501,6 @@ public class StockExchangeSimu {
             if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
                 continue;
             }
-
 
             Map<String, String> matchedResult = ses.doStockExchange(orderArr, orderArr[Trade_Dir]);
 

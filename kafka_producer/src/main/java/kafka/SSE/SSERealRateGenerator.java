@@ -32,7 +32,7 @@ public class SSERealRateGenerator {
     public SSERealRateGenerator(String input) {
         TOPIC = input;
         Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", "camel:9092");
         props.put("client.id", "ProducerExample");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -72,7 +72,7 @@ public class SSERealRateGenerator {
                     counter = 0;
                     cur = System.currentTimeMillis();
                     if (cur-start < 1000) {
-//                        sleep(1000 - (cur - start));
+                        sleep(1000 - (cur - start));
                     } else {
                         System.out.println("rate exceeds 1 second.");
                     }
@@ -87,11 +87,11 @@ public class SSERealRateGenerator {
 //                    continue;
 //                }
 
-//                for (int i=0; i< REPEAT; i++) {
-//                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-//                    producer.send(newRecord);
+                for (int i=0; i< REPEAT; i++) {
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+                    producer.send(newRecord);
                     counter++;
-//                }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();

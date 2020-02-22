@@ -1,5 +1,6 @@
 package samzatask.stock;
 
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.samza.context.Context;
 import org.apache.samza.operators.KV;
 import org.apache.samza.storage.kv.Entry;
@@ -30,6 +31,8 @@ public class StockAverageTask implements StreamTask, InitableTask {
     private static final int Trade_Dir = 22;
 
 
+    private RandomDataGenerator randomGen = new RandomDataGenerator();
+
     private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_price");
     private KeyValueStore<String, String> stockAvgPriceMap;
 
@@ -52,8 +55,7 @@ public class StockAverageTask implements StreamTask, InitableTask {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
 
-//        Long start = System.nanoTime();
-//        while (System.nanoTime() - start < 500000) {}
+        delay(6);
 
         String average = computeAverage(orderArr);
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, average));
@@ -66,5 +68,14 @@ public class StockAverageTask implements StreamTask, InitableTask {
         float sum = Float.parseFloat(stockAvgPriceMap.get(orderArr[Sec_Code])) + Float.parseFloat(orderArr[Order_Price]);
         stockAvgPriceMap.put(orderArr[Sec_Code], String.valueOf(sum));
         return orderArr[Sec_Code] + ": " + String.valueOf(sum);
+    }
+
+    private void delay(int interval) {
+        Double ranN = randomGen.nextGaussian(interval, 1);
+        ranN = ranN*1000000;
+        long delay = ranN.intValue();
+        if (delay < 0) delay = 6000000;
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < delay) {}
     }
 }

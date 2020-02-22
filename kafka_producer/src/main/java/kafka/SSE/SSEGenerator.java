@@ -95,9 +95,9 @@ public class SSEGenerator {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("stock_sb");
+        String TOPIC = new String("stock_cj");
         String file = new String("partition1");
-        int speed = 20000   ;
+        int speed = 100;
         if (args.length > 0) {
             TOPIC = args[0];
             file = args[1];

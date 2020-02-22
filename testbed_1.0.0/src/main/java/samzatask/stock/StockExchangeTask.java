@@ -1,5 +1,6 @@
 package samzatask.stock;
 
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -52,26 +53,20 @@ public class StockExchangeTask implements StreamTask, InitableTask {
     private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
     private KeyValueStore<String, String> stockExchangeMapSell;
     private KeyValueStore<String, String> stockExchangeMapBuy;
+    private RandomDataGenerator randomGen = new RandomDataGenerator();
 
     @SuppressWarnings("unchecked")
     public void init(Context context) {
         this.stockExchangeMapSell = (KeyValueStore<String, String>) context.getTaskContext().getStore("stock-exchange-sell");
         this.stockExchangeMapBuy = (KeyValueStore<String, String>) context.getTaskContext().getStore("stock-exchange-buy");
-//        System.out.println("Contents of store: ");
-//        KeyValueIterator<String, String> iter = stockAvgPriceMap.all();
-//        while (iter.hasNext()) {
-//            Entry<String, String> entry = iter.next();
-//            System.out.println(entry.getKey() + " => " + entry.getValue());
-//        }
-//        iter.close();
+        System.out.println("+++++Store loaded successfully!");
     }
 
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
 
-//        Long start = System.nanoTime();
-//        while (System.nanoTime() - start < 1000000) {}
+        delay(4);
 
         //filter
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
@@ -79,10 +74,6 @@ public class StockExchangeTask implements StreamTask, InitableTask {
         }
         // do transaction
         Map<String, String> matchedResult = doStockExchange(orderArr, orderArr[Trade_Dir]);
-
-//        for (Map.Entry<String, String> order : matchedResult.entrySet()) {
-//            collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, orderArr[Sec_Code], stockOrder));
-//        }
 
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, orderArr[Sec_Code], stockOrder));
     }
@@ -207,5 +198,14 @@ public class StockExchangeTask implements StreamTask, InitableTask {
         for (Map.Entry<String, String> order : matchedSell.entrySet()) {
             stockExchangeMapSell.delete(order.getKey());
         }
+    }
+
+    private void delay(int interval) {
+        Double ranN = randomGen.nextGaussian(interval, 1);
+        ranN = ranN*1000000;
+        long delay = ranN.intValue();
+        if (delay < 0) delay = 6000000;
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < delay) {}
     }
 }
