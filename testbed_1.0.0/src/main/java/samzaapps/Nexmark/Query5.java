@@ -60,12 +60,12 @@ public class Query5 implements StreamApplication {
 
         MessageStream<Bid> repartitionedBids =
                 bids
-                        .partitionBy(bd -> String.valueOf(bd.getAuctionId()), bd -> bd, KVSerde.of(stringSerde, bidSerde), "auction")
+                        .partitionBy(bd -> String.valueOf(bd.getAuction()), bd -> bd, KVSerde.of(stringSerde, bidSerde), "auction")
                         .map(KV::getValue);
 
         repartitionedBids
                 .window(Windows.keyedTumblingWindow(
-                    bd-> String.valueOf(bd.getAuctionId()), Duration.ofSeconds(60),
+                    bd-> String.valueOf(bd.getAuction()), Duration.ofSeconds(60),
                     ()-> 0, (m, prevCount) -> prevCount + 1,
                     new StringSerde(), new IntegerSerde()), "count"
                 ) // TODO: check which window is more suitable here

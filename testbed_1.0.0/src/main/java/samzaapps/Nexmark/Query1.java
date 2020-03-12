@@ -64,8 +64,8 @@ public class Query1 implements StreamApplication {
         OutputStream<KV<String, String>> results = appDescriptor.getOutputStream(outputDescriptor);
 
         bids
-                .map(bid -> KV.of(String.valueOf(bid.getAuctionId()),
-                String.valueOf(bid.getAuctionId()) + dollarToEuro(bid.getPrice(), 0.82F) + bid.getBidder() + bid.getDateTime()))
+                .map(bid -> KV.of(String.valueOf(bid.getAuction()),
+                String.valueOf(bid.getAuction()) + dollarToEuro(bid.getPrice(), 0.82F) + bid.getBidder() + bid.getDateTime()))
                 .sendTo(results);
     }
 
