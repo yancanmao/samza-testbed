@@ -6,32 +6,18 @@ import org.apache.kafka.common.Cluster;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SSEPartitioner implements Partitioner {
+public class SSERRPartitioner implements Partitioner {
 
     private HashMap<Integer, Integer> stockToPartition = new HashMap();
-    private int leftPartition = 0;
+    private int round = 0;
 
     @Override
     public int partition(String topic, Object key, byte[] keyBytes, Object value, byte[] valueBytes,
                          Cluster cluster) {
         int partitionNum = cluster.partitionCountForTopic(topic);
         int partition = 0;
-        String combinedKey = (String) key;
-        int stockId = Integer.parseInt(combinedKey.split("\\|")[0]);
-//        if (stockId > 0) {
-//            partition = stockId % partitionNum;
-//        }
-        if (!stockToPartition.containsKey(stockId)) {
-//            System.out.println(String.format("map stockId %d to %d", stockId, leftPartition));
-            stockToPartition.put(stockId, leftPartition);
-            leftPartition++;
-        }
-        partition = stockToPartition.get(stockId);
-        if (partition > partitionNum) {
-//            System.out.println(String.format("+++Wrong...partition: %d, max partition: %d", partition, partitionNum));
-            partition = stockId % partitionNum;
-        }
-        return partition;
+        round++;
+        return round%partitionNum;
     }
 
     @Override

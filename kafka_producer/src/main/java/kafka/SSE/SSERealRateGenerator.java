@@ -29,10 +29,10 @@ public class SSERealRateGenerator {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    public SSERealRateGenerator(String input) {
+    public SSERealRateGenerator(String input, String brokers) {
         TOPIC = input;
         Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", brokers);
         props.put("client.id", "ProducerExample");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -41,7 +41,7 @@ public class SSERealRateGenerator {
 
     }
 
-    public void generate(String FILE, int REPEAT) throws InterruptedException {
+    public void generate(String FILE, int REPEAT, int INTERVAL) throws InterruptedException {
 
         String sCurrentLine;
         List<String> textList = new ArrayList<>();
@@ -68,13 +68,13 @@ public class SSERealRateGenerator {
                         noRecSleepCnt++;
                         System.out.println("no record in this sleep !" + noRecSleepCnt);
                     }
-                    System.out.println("output rate: " + counter);
+                    System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
                     cur = System.currentTimeMillis();
-                    if (cur-start < 1000) {
-//                        sleep(1000 - (cur - start));
+                   if (cur-start < INTERVAL) {
+                        sleep(INTERVAL - (cur - start));
                     } else {
-                        System.out.println("rate exceeds 1 second.");
+                        System.out.println("rate exceeds" + INTERVAL + "ms.");
                     }
                     start = System.currentTimeMillis();
                 }
@@ -83,15 +83,11 @@ public class SSERealRateGenerator {
                     continue;
                 }
 
-//                if (end_count <= 10) {
-//                    continue;
-//                }
-
-//                for (int i=0; i< REPEAT; i++) {
-//                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-//                    producer.send(newRecord);
+                for (int i=0; i< REPEAT; i++) {
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+                    producer.send(newRecord);
                     counter++;
-//                }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -112,12 +108,14 @@ public class SSERealRateGenerator {
         final ParameterTool params = ParameterTool.fromArgs(args);
 
         String TOPIC = params.get("topic", "stock_sb");
-        String FILE = params.get("fp", "/root/SSE-kafka-producer/partition1.txt");
-        int REPEAT = params.getInt("repeat", 10);
+        String FILE = params.get("fp", "/home/samza/SSE_data/sb.txt");
+        int REPEAT = params.getInt("repeat", 1);
+        String BROKERS = params.get("host", "camel:9092");
+        int INTERVAL = params.getInt("interval", 1000);
 
-        System.out.println(TOPIC + FILE + REPEAT);
+        System.out.println(TOPIC + FILE + REPEAT + BROKERS);
 
-        new SSERealRateGenerator(TOPIC).generate(FILE, REPEAT);
+        new SSERealRateGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL);
     }
 }
 

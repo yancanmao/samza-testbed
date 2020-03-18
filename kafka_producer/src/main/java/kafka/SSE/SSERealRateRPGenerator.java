@@ -1,5 +1,6 @@
 package kafka.SSE;
 
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -9,13 +10,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import org.apache.flink.api.java.utils.ParameterTool;
+
 import static java.lang.Thread.sleep;
 
 /**
  * SSE generaor
  */
-public class SSERealRateGenerator {
+public class SSERealRateRPGenerator {
 
     private String TOPIC;
 
@@ -29,14 +30,14 @@ public class SSERealRateGenerator {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    public SSERealRateGenerator(String input, String brokers) {
+    public SSERealRateRPGenerator(String input, String brokers) {
         TOPIC = input;
         Properties props = new Properties();
         props.put("bootstrap.servers", brokers);
         props.put("client.id", "ProducerExample");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("partitioner.class", "kafka.SSE.SSEPartitioner");
+        props.put("partitioner.class", "kafka.SSE.SSERRPartitioner");
         producer = new KafkaProducer<String, String>(props);
 
     }
@@ -64,15 +65,16 @@ public class SSERealRateGenerator {
             while ((sCurrentLine = br.readLine()) != null) {
 
                 if (sCurrentLine.equals("end")) {
-                    if (counter == 0) {
-                        noRecSleepCnt++;
-                        System.out.println("no record in this sleep !" + noRecSleepCnt);
+                    noRecSleepCnt++;
+                    if (counter > 2500 && noRecSleepCnt % (1000/INTERVAL) == 0) {
+                        counter = 0;
+                        System.out.println("timestamp :" + noRecSleepCnt + " rate: " + counter);
                     }
-                    System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
-                    counter = 0;
+                    //System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
+                    // counter = 0;
                     cur = System.currentTimeMillis();
                    if (cur-start < INTERVAL) {
-                        sleep(INTERVAL - (cur - start));
+                        //sleep(INTERVAL - (cur - start));
                     } else {
                         System.out.println("rate exceeds" + INTERVAL + "ms.");
                     }
@@ -84,8 +86,8 @@ public class SSERealRateGenerator {
                 }
 
                 for (int i=0; i< REPEAT; i++) {
-                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-                    producer.send(newRecord);
+//                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine);
+//                    producer.send(newRecord);
                     counter++;
                 }
             }
@@ -115,7 +117,7 @@ public class SSERealRateGenerator {
 
         System.out.println(TOPIC + FILE + REPEAT + BROKERS);
 
-        new SSERealRateGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL);
+        new SSERealRateRPGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL);
     }
 }
 
