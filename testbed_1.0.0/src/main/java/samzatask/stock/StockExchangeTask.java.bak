@@ -6,6 +6,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.samza.context.Context;
+import org.apache.samza.operators.KV;
+import org.apache.samza.storage.kv.Entry;
+import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
 import org.apache.samza.system.IncomingMessageEnvelope;
 import org.apache.samza.system.OutgoingMessageEnvelope;
@@ -30,7 +33,7 @@ import java.util.Map;
  *
  * It is useful for command line testing with the kafka console producer and consumer and text messages.
  */
-public class StockExchangeTaskBak implements StreamTask, InitableTask {
+public class StockExchangeTask implements StreamTask, InitableTask {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -42,7 +45,7 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
-    private Map<String, Map<Float, List<String[]>>> pool = new HashMap<>();
+    private Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
     private Map<String, List<Float>> poolPrice = new HashMap<>();
 
 
@@ -65,17 +68,17 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
-//        Order order = new Order(stockOrder);
+        Order order = new Order(orderArr);
 
-//        Long start = System.nanoTime();
-//        while (System.nanoTime() - start < 1000000) {}
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < 1000000) {}
 
         //filter
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
             return;
         }
         // do transaction
-        List<String> xactResult = stockExchange(pool, poolPrice, orderArr);
+        List<String> xactResult = stockExchange(pool, poolPrice, order);
 
 //        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, KV.of(order.getSecCode(), xactResult.toString())));
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, orderArr[Sec_Code], stockOrder));
@@ -126,7 +129,7 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
                     FSDataInputStream inputStream = fs.open(realFile.getPath());
                     br = new BufferedReader(new InputStreamReader(inputStream));
                     while ((sCurrentLine = br.readLine()) != null) {
-                        Order order = new Order(sCurrentLine);
+                        Order order = new Order(sCurrentLine.split("\\|"));
                         orderList = poolI.get(order.getOrderPrice());
                         if (orderList == null) {
                             pricePoolI.add(order.getOrderPrice());
@@ -152,9 +155,9 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
      * @param poolB,poolS,pool,order
      * @return output string
      */
-    private List<String> transaction(Map<Float, List<String[]>> poolB, Map<Float, List<String[]>> poolS,
+    private List<String> transaction(Map<Float, List<Order>> poolB, Map<Float, List<Order>> poolS,
                                      List<Float> poolPriceB, List<Float> poolPriceS, Map<String, List<Float>> poolPrice,
-                                     Map<String, Map<Float, List<String[]>>> pool, Order order) {
+                                     Map<String, Map<Float, List<Order>>> pool, Order order) {
         // hava a transaction
         int top = 0;
         int i = 0;
@@ -165,9 +168,9 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
         List<String> tradeResult = new ArrayList<>();
         while (poolPriceS.get(top) <= poolPriceB.get(top)) {
             tradePrice = poolPriceS.get(top);
-            if (Integer.valueOf(poolB.get(poolPriceB.get(top)).get(top)[Order_Vol]) > Integer.valueOf(poolS.get(poolPriceS.get(top)).get(top)[Order_Vol])) {
+            if (poolB.get(poolPriceB.get(top)).get(top).getOrderVol() > poolS.get(poolPriceS.get(top)).get(top).getOrderVol()) {
                 // B remains B_top-S_top
-                otherOrderVol = Integer.valueOf(poolS.get(poolPriceS.get(top)).get(top)[Order_Vol]);
+                otherOrderVol = poolS.get(poolPriceS.get(top)).get(top).getOrderVol();
                 // totalVol sum
                 totalVol += otherOrderVol;
                 poolB.get(poolPriceB.get(top)).get(top).updateOrder(otherOrderVol);
@@ -219,15 +222,14 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
      * @param pool, order
      * @return String
      */
-    private List<String> stockExchange(Map<String, Map<Float, List<String[]>>> pool, Map<String, List<Float>> poolPrice, String[] orderArr) {
+    private List<String> stockExchange(Map<String, Map<Float, List<Order>>> pool, Map<String, List<Float>> poolPrice, Order order) {
         // String complete = new String();
         List<String> tradeResult = new ArrayList<>();
         // load poolS poolB
-        String stockId = orderArr[Sec_Code];
-        Map<Float, List<String[]>> poolS = pool.get(stockId+"S");
-        Map<Float, List<String[]>> poolB = pool.get(stockId+"B");
-        List<Float> poolPriceB = poolPrice.get(stockId+"B");
-        List<Float> poolPriceS = poolPrice.get(stockId+"S");
+        Map<Float, List<Order>> poolS = pool.get(order.getSecCode()+"S");
+        Map<Float, List<Order>> poolB = pool.get(order.getSecCode()+"B");
+        List<Float> poolPriceB = poolPrice.get(order.getSecCode()+"B");
+        List<Float> poolPriceS = poolPrice.get(order.getSecCode()+"S");
 
         if (poolB == null) {
             poolB = new HashMap<>();
@@ -242,18 +244,19 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
             poolPriceS = new ArrayList<>();
         }
 
-        if (orderArr[Trade_Dir].equals("B")) {
-            float orderPrice = Float.parseFloat(orderArr[Order_Price]);
-            List<String[]> BorderList = poolB.get(orderPrice);
+        if (order.getTradeDir().equals("B")) {
+            float orderPrice = order.getOrderPrice();
+            List<Order> BorderList = poolB.get(orderPrice);
             // if order tran_maint_code is "D", delete from pool
-            if (FILTER_KEY1.equals(orderArr[Tran_Maint_Code])) {
+            if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                 // if exist in order, remove from pool
-                String orderNo = orderArr[Order_No];
+                String orderNo = order.getOrderNo();
                 if (BorderList == null) {
+                    // return "{\"process_no\":\"11\", \"result\":\"no such B order to delete:" + orderNo+"\"}";
                     return tradeResult;
                 }
                 for (int i=0; i < BorderList.size(); i++) {
-                    if (orderNo.equals(BorderList.get(i)[Order_No])) {
+                    if (orderNo.equals(BorderList.get(i).getOrderNo())) {
                         BorderList.remove(i);
                         // if no other price delete poolPrice
                         if (BorderList.isEmpty()) {
@@ -267,8 +270,8 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
                         } else {
                             poolB.put(orderPrice, BorderList);
                         }
-                        poolPrice.put(stockId+"B", poolPriceB);
-                        pool.put(stockId+"B", poolB);
+                        poolPrice.put(order.getSecCode()+"B", poolPriceB);
+                        pool.put(order.getSecCode()+"B", poolB);
                         return tradeResult;
                     }
                 }
@@ -295,13 +298,13 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
                     }
                 }
             }
-            BorderList.add(orderArr);
+            BorderList.add(order);
             poolB.put(orderPrice, BorderList);
 
             // if no elements in poolS, no transaction, add poolB
             if (poolPriceS.isEmpty()) {
-                pool.put(stockId+"B", poolB);
-                poolPrice.put(stockId+"B", poolPriceB);
+                pool.put(order.getSecCode()+"B", poolB);
+                poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 // return complete;
                 return tradeResult;
             }
@@ -309,26 +312,26 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
             // no satisfied price
             if (poolPriceS.get(0) > poolPriceB.get(0)) {
                 // this.savepool();
-                pool.put(stockId+"S", poolS);
-                pool.put(stockId+"B", poolB);
-                poolPrice.put(stockId+"S", poolPriceS);
-                poolPrice.put(stockId+"B", poolPriceB);
+                pool.put(order.getSecCode()+"S", poolS);
+                pool.put(order.getSecCode()+"B", poolB);
+                poolPrice.put(order.getSecCode()+"S", poolPriceS);
+                poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 return tradeResult;
             } else {
-                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, orderArr);
+                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
-        } else if (orderArr[Trade_Dir].equals("S")) {
-            float orderPrice = Float.parseFloat(orderArr[Order_Price]);
-            List<String[]> SorderList = poolS.get(orderPrice);
+        } else if (order.getTradeDir().equals("S")) {
+            float orderPrice = order.getOrderPrice();
+            List<Order> SorderList = poolS.get(orderPrice);
             // if order tran_maint_code is "D", delete from pool
-            if (FILTER_KEY1.equals(orderArr[Tran_Maint_Code])) {
+            if (FILTER_KEY1.equals(order.getTranMaintCode())) {
                 // if exist in order, remove from pool
-                String orderNo = orderArr[Order_No];
+                String orderNo = order.getOrderNo();
                 if (SorderList == null) {
                     return tradeResult;
                 }
                 for (int i=0; i < SorderList.size(); i++) {
-                    if (orderNo.equals(SorderList.get(i)[Order_No])) {
+                    if (orderNo.equals(SorderList.get(i).getOrderNo())) {
                         SorderList.remove(i);
                         // if no other price delete poolPrice
                         if (SorderList.isEmpty()) {
@@ -342,8 +345,8 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
                         } else {
                             poolS.put(orderPrice, SorderList);
                         }
-                        poolPrice.put(stockId+"S", poolPriceS);
-                        pool.put(stockId+"S", poolS);
+                        poolPrice.put(order.getSecCode()+"S", poolPriceS);
+                        pool.put(order.getSecCode()+"S", poolS);
                         return tradeResult;
                     }
                 }
@@ -370,25 +373,25 @@ public class StockExchangeTaskBak implements StreamTask, InitableTask {
                     }
                 }
             }
-            SorderList.add(orderArr);
+            SorderList.add(order);
             poolS.put(orderPrice, SorderList);
             // if no elements in poolB, no transaction, add poolS
             if (poolPriceB.isEmpty()) {
-                pool.put(stockId+"S", poolS);
-                poolPrice.put(stockId+"S", poolPriceS);
+                pool.put(order.getSecCode()+"S", poolS);
+                poolPrice.put(order.getSecCode()+"S", poolPriceS);
                 return tradeResult;
             }
 
             // no satisfied price
             if (poolPriceS.get(0) > poolPriceB.get(0)) {
                 // this.savepool();
-                pool.put(stockId+"S", poolS);
-                pool.put(stockId+"B", poolB);
-                poolPrice.put(stockId+"S", poolPriceS);
-                poolPrice.put(stockId+"B", poolPriceB);
+                pool.put(order.getSecCode()+"S", poolS);
+                pool.put(order.getSecCode()+"B", poolB);
+                poolPrice.put(order.getSecCode()+"S", poolPriceS);
+                poolPrice.put(order.getSecCode()+"B", poolPriceB);
                 return tradeResult;
             } else {
-                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, orderArr);
+                tradeResult = this.transaction(poolB, poolS, poolPriceB, poolPriceS, poolPrice, pool, order);
             }
         }
         return tradeResult;

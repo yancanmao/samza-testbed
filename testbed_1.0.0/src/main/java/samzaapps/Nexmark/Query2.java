@@ -61,14 +61,14 @@ public class Query2 implements StreamApplication {
 
         bids
                 .filter(bid -> {
-                    if (bid.getAuctionId() % 1007 == 0 || bid.getAuctionId() % 1020 == 0
-                            || bid.getAuctionId() % 2001 == 0 || bid.getAuctionId() % 2019 == 0 || bid.getAuctionId() % 2087 == 0) {
+                    if (bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
+                            || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0) {
                         return true;
                     } else {
                         return false;
                     }
                 })
-                .map(bid -> KV.of(String.valueOf(bid.getAuctionId()), String.valueOf(bid.getPrice())))
+                .map(bid -> KV.of(String.valueOf(bid.getAuction()), String.valueOf(bid.getPrice())))
                 .sendTo(results);
     }
 }

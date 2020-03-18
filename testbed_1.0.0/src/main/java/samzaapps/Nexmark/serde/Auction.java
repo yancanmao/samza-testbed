@@ -7,36 +7,42 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class Auction {
 
-    private long auctionId; // the unique id of the page that the ad was clicked on
+    private long id; // the unique id of the page that the ad was clicked on
     private String itemName; // an unique id for the ad
     private String description; // the user that clicked the ad
     private long initialBid; // the user that clicked the ad
     private long reserve; // the user that clicked the ad
+    private long dateTime;
     private long expires; // the user that clicked the ad
     private long seller; // the user that clicked the ad
+    private int  category;
     private String extra; // the user that clicked the ad
 
     public Auction(
-            @JsonProperty("auctionId") long auctionId,
+            @JsonProperty("id") long id,
             @JsonProperty("itemName") String itemName,
             @JsonProperty("description") String description,
             @JsonProperty("initialBid") long initialBid,
             @JsonProperty("reserve") long reserve,
+            @JsonProperty("dateTime") long dateTime,
             @JsonProperty("expires") long expires,
             @JsonProperty("seller") long seller,
+            @JsonProperty("category") int category,
             @JsonProperty("extra") String extra) {
-        this.auctionId = auctionId;
+        this.id = id;
         this.itemName = itemName;
         this.description = description;
         this.initialBid = initialBid;
         this.reserve = reserve;
+        this.dateTime = dateTime;
         this.expires = expires;
         this.seller = seller;
+        this.category = category;
         this.extra = extra;
     }
 
-    public long getAuctionId() {
-        return auctionId;
+    public long getId() {
+        return id;
     }
 
     public String getItemName() {

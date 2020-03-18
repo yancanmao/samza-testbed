@@ -71,7 +71,7 @@ public class Query8 implements StreamApplication {
 
         MessageStream<Person> repartitionedPersons =
                 persons
-                        .partitionBy(ps -> String.valueOf(ps.getPersonId()), ps -> ps, KVSerde.of(stringSerde, personSerde), "person")
+                        .partitionBy(ps -> String.valueOf(ps.getId()), ps -> ps, KVSerde.of(stringSerde, personSerde), "person")
                         .map(KV -> {
                             System.out.println(KV);
                             return KV.getValue();
@@ -86,7 +86,7 @@ public class Query8 implements StreamApplication {
                 new JoinFunction<String, Auction, Person, JoinResult>() {
                     @Override
                     public JoinResult apply(Auction auction, Person person) {
-                        return new JoinResult(person.getName(), person.getCity(), person.getState(), auction.getAuctionId());
+                        return new JoinResult(person.getName(), person.getCity(), person.getState(), auction.getId());
                     }
 
                     @Override
@@ -96,7 +96,7 @@ public class Query8 implements StreamApplication {
 
                     @Override
                     public String getSecondKey(Person person) {
-                        return String.valueOf(person.getPersonId());
+                        return String.valueOf(person.getId());
                     }
                 };
 

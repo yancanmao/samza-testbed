@@ -1,13 +1,7 @@
 package samzatask.stock;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.samza.context.Context;
-import org.apache.samza.operators.KV;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
@@ -19,23 +13,17 @@ import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Serializable;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.samza.config.Config;
+
 
 /**
  * This is a simple task that writes each message to a state store and prints them all out on reload.
  *
  * It is useful for command line testing with the kafka console producer and consumer and text messages.
  */
-public class StockExchangeTask implements StreamTask, InitableTask, Serializable {
+public class StateLoaderTask implements StreamTask, InitableTask {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -50,18 +38,11 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
     private Map<String, List<Float>> poolPrice = new HashMap<>();
 
-    private final Config config;
-    private static final int DefaultDelay = 5;
 
     private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
     private KeyValueStore<String, String> stockExchangeMapSell;
     private KeyValueStore<String, String> stockExchangeMapBuy;
     private RandomDataGenerator randomGen = new RandomDataGenerator();
-
-
-    public StockExchangeTask(Config config) {
-        this.config = config;
-    }
 
     @SuppressWarnings("unchecked")
     public void init(Context context) {
@@ -73,8 +54,6 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
-
-        delay(config.getInt("job.delay.time.ms", DefaultDelay));
 
         //filter
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
@@ -206,14 +185,5 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         for (Map.Entry<String, String> order : matchedSell.entrySet()) {
             stockExchangeMapSell.delete(order.getKey());
         }
-    }
-
-    private void delay(int interval) {
-        Double ranN = randomGen.nextGaussian(interval, 1);
-        ranN = ranN*1000000;
-        long delay = ranN.intValue();
-        if (delay < 0) delay = 6000000;
-        Long start = System.nanoTime();
-        while (System.nanoTime() - start < delay) {}
     }
 }
