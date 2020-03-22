@@ -58,7 +58,7 @@ public class StockExchangeApp implements TaskApplication {
         taskApplicationDescriptor.withOutputStream(outputDescriptor);
 
         // Set the task factory
-        taskApplicationDescriptor.withTaskFactory((StreamTaskFactory) () -> new StockExchangeTask());
+        taskApplicationDescriptor.withTaskFactory((StreamTaskFactory) () -> new StockExchangeTask(taskApplicationDescriptor.getConfig()));
     }
 
         public static void main(String[] args) {

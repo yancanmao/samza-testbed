@@ -22,19 +22,20 @@ import org.apache.samza.task.TaskCoordinator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.samza.config.Config;
 
 /**
  * This is a simple task that writes each message to a state store and prints them all out on reload.
  *
  * It is useful for command line testing with the kafka console producer and consumer and text messages.
  */
-public class StockExchangeTask implements StreamTask, InitableTask {
+public class StockExchangeTask implements StreamTask, InitableTask, Serializable {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -49,11 +50,18 @@ public class StockExchangeTask implements StreamTask, InitableTask {
     private Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
     private Map<String, List<Float>> poolPrice = new HashMap<>();
 
+    private final Config config;
+    private static final int DefaultDelay = 5;
 
     private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
     private KeyValueStore<String, String> stockExchangeMapSell;
     private KeyValueStore<String, String> stockExchangeMapBuy;
     private RandomDataGenerator randomGen = new RandomDataGenerator();
+
+
+    public StockExchangeTask(Config config) {
+        this.config = config;
+    }
 
     @SuppressWarnings("unchecked")
     public void init(Context context) {
@@ -66,7 +74,7 @@ public class StockExchangeTask implements StreamTask, InitableTask {
         String stockOrder = (String) envelope.getMessage();
         String[] orderArr = stockOrder.split("\\|");
 
-        delay(4);
+        delay(config.getInt("job.delay.time.ms", DefaultDelay));
 
         //filter
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1) || orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
