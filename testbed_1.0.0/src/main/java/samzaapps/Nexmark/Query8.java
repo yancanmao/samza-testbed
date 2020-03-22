@@ -17,12 +17,13 @@ import samzaapps.Nexmark.serde.Auction;
 import samzaapps.Nexmark.serde.Bid;
 import samzaapps.Nexmark.serde.Person;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 
-public class Query8 implements StreamApplication {
+public class Query8 implements StreamApplication, Serializable {
 
     private static final String KAFKA_SYSTEM_NAME = "kafka";
     private static final List<String> KAFKA_CONSUMER_ZK_CONNECT = ImmutableList.of("localhost:2181");
@@ -42,7 +43,7 @@ public class Query8 implements StreamApplication {
         JsonSerdeV2<Person> personSerde = new JsonSerdeV2<>(Person.class);
         JsonSerdeV2<Bid> bidSerde = new JsonSerdeV2<>(Bid.class);
         JsonSerdeV2<Auction> auctionSerde = new JsonSerdeV2<>(Auction.class);
-        JsonSerdeV2<JoinResult> joinResultSerde = new JsonSerdeV2<>(JoinResult.class);
+//        JsonSerdeV2<JoinResult> joinResultSerde = new JsonSerdeV2<>(JoinResult.class);
 
         KafkaSystemDescriptor kafkaSystemDescriptor = new KafkaSystemDescriptor(KAFKA_SYSTEM_NAME)
                 .withConsumerZkConnect(KAFKA_CONSUMER_ZK_CONNECT)
@@ -61,19 +62,21 @@ public class Query8 implements StreamApplication {
                 kafkaSystemDescriptor.getOutputDescriptor(OUTPUT_STREAM_ID,
                         serde);
 
-        KafkaOutputDescriptor<JoinResult> joinResultOutputDescriptor =
-                kafkaSystemDescriptor.getOutputDescriptor(OUTPUT_STREAM_ID, joinResultSerde);
+//        KafkaOutputDescriptor<JoinResult> joinResultOutputDescriptor =
+//                kafkaSystemDescriptor.getOutputDescriptor(OUTPUT_STREAM_ID, joinResultSerde);
+        KafkaOutputDescriptor<String> joinResultOutputDescriptor =
+                kafkaSystemDescriptor.getOutputDescriptor(OUTPUT_STREAM_ID, new StringSerde());
 
         MessageStream<Person> persons = appDescriptor.getInputStream(personDescriptor);
         MessageStream<Auction> auctions = appDescriptor.getInputStream(auctionDescriptor);
-        OutputStream<JoinResult> joinResults = appDescriptor.getOutputStream(joinResultOutputDescriptor);
+        OutputStream<String> joinResults = appDescriptor.getOutputStream(joinResultOutputDescriptor);
 
 
         MessageStream<Person> repartitionedPersons =
                 persons
                         .partitionBy(ps -> String.valueOf(ps.getId()), ps -> ps, KVSerde.of(stringSerde, personSerde), "person")
                         .map(KV -> {
-                            System.out.println(KV);
+//                            System.out.println(KV);
                             return KV.getValue();
                         });
 
@@ -82,11 +85,11 @@ public class Query8 implements StreamApplication {
                         .partitionBy(ac -> String.valueOf(ac.getSeller()), ac -> ac, KVSerde.of(stringSerde, auctionSerde), "auction")
                         .map(KV::getValue);
 
-        JoinFunction<String, Auction, Person, JoinResult> joinFunction =
-                new JoinFunction<String, Auction, Person, JoinResult>() {
+        JoinFunction<String, Auction, Person, String> joinFunction =
+                new JoinFunction<String, Auction, Person, String>() {
                     @Override
-                    public JoinResult apply(Auction auction, Person person) {
-                        return new JoinResult(person.getName(), person.getCity(), person.getState(), auction.getId());
+                    public String apply(Auction auction, Person person) {
+                        return new JoinResult(String.valueOf(person.getId()), person.getName(), String.valueOf(auction.getReserve())).toString();
                     }
 
                     @Override
@@ -107,16 +110,20 @@ public class Query8 implements StreamApplication {
     }
 
     static class JoinResult {
-        public String name;
-        public String city;
-        public String state;
-        public long auctionId;
+        public String personId;
+        public String personName;
+        public String auctionReserve;
 
-        public JoinResult(String name, String city, String state, long auctionId) {
-            this.name = name;
-            this.city = city;
-            this.state = state;
-            this.auctionId = auctionId;
+        public JoinResult(String personId, String personName, String auctionReserve) {
+            this.personId = personId;
+            this.personName = personName;
+            this.auctionReserve = auctionReserve;
+        }
+
+        @Override
+        public String toString() {
+            return "joinResult: { personId:" + personId + ", personName: " + personName + ", auctionReserve: " + auctionReserve + "}";
+
         }
     }
 }

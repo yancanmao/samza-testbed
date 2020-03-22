@@ -4,6 +4,7 @@ import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;
 import org.apache.beam.sdk.nexmark.sources.generator.model.AuctionGenerator;
 import org.apache.beam.sdk.nexmark.sources.generator.model.BidGenerator;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -22,24 +23,43 @@ public class KafkaBidGenerator {
     private volatile boolean running = true;
     private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
+    private int rate;
+    private int cycle;
 
-
-    public KafkaBidGenerator(String input) {
-        TOPIC = input;
+    public KafkaBidGenerator(String input, String BROKERS, int rate, int cycle) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
+        props.put("bootstrap.servers", BROKERS);
         props.put("client.id", "ProducerExample");
         props.put("key.serializer", "org.apache.kafka.common.serialization.LongSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 //        props.put("partitioner.class", "generator.SSEPartitioner");
         producer = new KafkaProducer<Long, String>(props);
+        TOPIC = input;
+        this.rate = rate;
+        this.cycle = cycle;
     }
 
-    public void generate(int rate) throws InterruptedException {
-        while (running && eventsCountSoFar < 20_000_000) {
-            long emitStartTime = System.currentTimeMillis();
+    public void generate() throws InterruptedException {
+        int epoch = 0;
+        int count = 0;
 
-            for (int i = 0; i < rate; i++) {
+        long emitStartTime = 0;
+
+        while (running && eventsCountSoFar < 20_000_000) {
+
+            emitStartTime = System.currentTimeMillis();
+
+            if (count == 20) {
+//                changeRate(true, 1000);
+                // change input rate every 1 second.
+                epoch++;
+                System.out.println();
+                int curRate = changeRate(epoch);
+                System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
+                count = 0;
+            }
+
+            for (int i = 0; i < Integer.valueOf(rate/20); i++) {
 
                 long nextId = nextId();
                 Random rnd = new Random(nextId);
@@ -57,9 +77,10 @@ public class KafkaBidGenerator {
 
             // Sleep for the rest of timeslice if needed
             long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000) {
-                Thread.sleep(1000 - emitTime);
+            if (emitTime < 1000/20) {
+                Thread.sleep(1000/20 - emitTime);
             }
+            count++;
         }
         producer.close();
     }
@@ -68,14 +89,33 @@ public class KafkaBidGenerator {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("bid");
-        int rate = 1;
-        if (args.length > 0) {
-            TOPIC = args[0];
-            rate = Integer.parseInt(args[2]);
+    private void changeRate(Boolean inc, Integer n) {
+        if (inc) {
+            rate += n;
+        } else {
+            if (rate > n) {
+                rate -= n;
+            }
         }
-        new KafkaBidGenerator(TOPIC).generate(rate);
+    }
+
+    private int changeRate(int epoch) {
+        double sineValue = Math.sin(Math.toRadians(epoch*360/cycle)) + 1;
+        System.out.println(sineValue);
+
+        Double curRate = (sineValue * rate);
+        return curRate.intValue();
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        final ParameterTool params = ParameterTool.fromArgs(args);
+
+        String BROKERS = params.get("host", "localhost:9092");
+        String TOPIC = params.get("topic", "auctions");
+        int rate = params.getInt("rate", 1000);
+        int cycle = params.getInt("cycle", 360);
+
+        new KafkaBidGenerator(TOPIC, BROKERS, rate, cycle).generate();
     }
 }
 
