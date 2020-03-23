@@ -6,7 +6,10 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -32,11 +35,7 @@ public class SSERealRateGenerator {
     public SSERealRateGenerator(String input, String brokers) {
         TOPIC = input;
         Properties props = new Properties();
-<<<<<<< HEAD
         props.put("bootstrap.servers", brokers);
-=======
-        props.put("bootstrap.servers", "camel:9092");
->>>>>>> 766f17699d23a0d2316fba30027e05c69de7b0e3
         props.put("client.id", "ProducerExample");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -75,37 +74,32 @@ public class SSERealRateGenerator {
                     System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
                     cur = System.currentTimeMillis();
-<<<<<<< HEAD
                    if (cur-start < INTERVAL) {
-                        sleep(INTERVAL - (cur - start));
-=======
-                    if (cur-start < 1000) {
-                        sleep(1000 - (cur - start));
->>>>>>> 766f17699d23a0d2316fba30027e05c69de7b0e3
-                    } else {
+                       sleep(INTERVAL - (cur - start));
+                   } else {
                         System.out.println("rate exceeds" + INTERVAL + "ms.");
                     }
                     start = System.currentTimeMillis();
                 }
 
-                if (sCurrentLine.split("\\|").length < 10) {
+                String[] orderArr = sCurrentLine.split("\\|");
+
+                if (orderArr.length < 10) {
                     continue;
                 }
 
-<<<<<<< HEAD
-=======
-//                if (end_count <= 10) {
-//                    continue;
-//                }
+                String date = orderArr[2] + " " + orderArr[3] + "," + orderArr[4].split("\\.")[1].substring(0,3);
+                System.out.println(getTime(date).getTime());
 
->>>>>>> 766f17699d23a0d2316fba30027e05c69de7b0e3
                 for (int i=0; i< REPEAT; i++) {
-                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, null, getTime(date).getTime(), sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
                     producer.send(newRecord);
                     counter++;
                 }
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
             e.printStackTrace();
         } finally {
             try {
@@ -132,6 +126,10 @@ public class SSERealRateGenerator {
         System.out.println(TOPIC + FILE + REPEAT + BROKERS);
 
         new SSERealRateGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL);
+    }
+
+    private static Date getTime(String time) throws ParseException {
+        return new SimpleDateFormat("yyyyMMdd HH:mm:ss,SSS").parse(time);
     }
 }
 
