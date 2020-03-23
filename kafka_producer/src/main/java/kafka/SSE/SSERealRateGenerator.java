@@ -57,6 +57,7 @@ public class SSERealRateGenerator {
         int counter = 0;
 
         int noRecSleepCnt = 0;
+        int sleepCnt = 0;
 
         try {
             stream = new FileReader(FILE);
@@ -67,6 +68,7 @@ public class SSERealRateGenerator {
             while ((sCurrentLine = br.readLine()) != null) {
 
                 if (sCurrentLine.equals("end")) {
+                    sleepCnt++;
                     if (counter == 0) {
                         noRecSleepCnt++;
                         System.out.println("no record in this sleep !" + noRecSleepCnt);
@@ -74,12 +76,12 @@ public class SSERealRateGenerator {
                     System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
                     cur = System.currentTimeMillis();
-                   if (cur-start < INTERVAL) {
-                       sleep(INTERVAL - (cur - start));
+                   if (cur < sleepCnt*INTERVAL + start) {
+                       sleep((sleepCnt*INTERVAL + start) - cur);
                    } else {
                         System.out.println("rate exceeds" + INTERVAL + "ms.");
                     }
-                    start = System.currentTimeMillis();
+//                    start = System.currentTimeMillis();
                 }
 
                 String[] orderArr = sCurrentLine.split("\\|");
@@ -89,9 +91,10 @@ public class SSERealRateGenerator {
                 }
 
                 String date = orderArr[2] + " " + orderArr[3] + "," + orderArr[4].split("\\.")[1].substring(0,3);
-                System.out.println(getTime(date).getTime());
+//                System.out.println(getTime(date).getTime());
 
                 for (int i=0; i< REPEAT; i++) {
+//                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, null, getTime(date).getTime(), sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
                     ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, null, getTime(date).getTime(), sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
                     producer.send(newRecord);
                     counter++;
