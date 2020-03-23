@@ -49,7 +49,6 @@ public class KafkaAuctionGenerator {
             emitStartTime = System.currentTimeMillis();
 
             if (count == 20) {
-//                changeRate(true, 1000);
                 // change input rate every 1 second.
                 epoch++;
                 System.out.println();
@@ -77,7 +76,7 @@ public class KafkaAuctionGenerator {
                 producer.send(newRecord);
                 eventsCountSoFar++;
             }
-//
+
             // Sleep for the rest of timeslice if needed
             long emitTime = System.currentTimeMillis() - emitStartTime;
             if (emitTime < 1000/20) {
@@ -91,17 +90,6 @@ public class KafkaAuctionGenerator {
 
     private long nextId() {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
-    }
-
-
-    private void changeRate(Boolean inc, Integer n) {
-        if (inc) {
-            rate += n;
-        } else {
-            if (rate > n) {
-                rate -= n;
-            }
-        }
     }
 
     private int changeRate(int epoch) {

@@ -50,7 +50,6 @@ public class KafkaBidGenerator {
             emitStartTime = System.currentTimeMillis();
 
             if (count == 20) {
-//                changeRate(true, 1000);
                 // change input rate every 1 second.
                 epoch++;
                 System.out.println();
@@ -89,16 +88,6 @@ public class KafkaBidGenerator {
         return config.firstEventId + config.nextAdjustedEventNumber(eventsCountSoFar);
     }
 
-    private void changeRate(Boolean inc, Integer n) {
-        if (inc) {
-            rate += n;
-        } else {
-            if (rate > n) {
-                rate -= n;
-            }
-        }
-    }
-
     private int changeRate(int epoch) {
         double sineValue = Math.sin(Math.toRadians(epoch*360/cycle)) + 1;
         System.out.println(sineValue);
@@ -111,7 +100,7 @@ public class KafkaBidGenerator {
         final ParameterTool params = ParameterTool.fromArgs(args);
 
         String BROKERS = params.get("host", "localhost:9092");
-        String TOPIC = params.get("topic", "auctions");
+        String TOPIC = params.get("topic", "bids");
         int rate = params.getInt("rate", 1000);
         int cycle = params.getInt("cycle", 360);
 
