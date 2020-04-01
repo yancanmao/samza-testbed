@@ -1,5 +1,6 @@
 package kafka.SSE;
 
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -95,14 +96,13 @@ public class SSEGenerator {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        String TOPIC = new String("stock_cj");
-        String file = new String("partition1");
-        int speed = 100;
-        if (args.length > 0) {
-            TOPIC = args[0];
-            file = args[1];
-            speed = Integer.parseInt(args[2]);
-        }
+        // Checking input parameters
+        final ParameterTool params = ParameterTool.fromArgs(args);
+
+        String TOPIC = params.get("topic", "stock_sb");
+        String file = params.get("fp", "partition1");
+        int speed = params.getInt("rate", 100);
+
         new SSEGenerator(TOPIC).generate(file, speed);
     }
 }

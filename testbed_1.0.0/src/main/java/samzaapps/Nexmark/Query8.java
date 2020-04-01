@@ -2,6 +2,7 @@ package samzaapps.Nexmark;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.samza.application.StreamApplication;
 import org.apache.samza.application.descriptors.StreamApplicationDescriptor;
 import org.apache.samza.operators.KV;
@@ -34,9 +35,11 @@ public class Query8 implements StreamApplication, Serializable {
     private static final String AUCTION_STREAM = "auctions";
     private static final String PERSON_STREAM = "persons";
     private static final String OUTPUT_STREAM_ID = "results";
+    private RandomDataGenerator randomGen = new RandomDataGenerator();
 
     @Override
     public void describe(StreamApplicationDescriptor appDescriptor) {
+
         Serde serde = KVSerde.of(new StringSerde(), new StringSerde());
 
         StringSerde stringSerde = new StringSerde();
@@ -74,16 +77,20 @@ public class Query8 implements StreamApplication, Serializable {
 
         MessageStream<Person> repartitionedPersons =
                 persons
-                        .partitionBy(ps -> String.valueOf(ps.getId()), ps -> ps, KVSerde.of(stringSerde, personSerde), "person")
+//                        .partitionBy(ps -> String.valueOf(ps.getId()), ps -> ps, KVSerde.of(stringSerde, personSerde), "person")
                         .map(KV -> {
-//                            System.out.println(KV);
-                            return KV.getValue();
+//                            delay(1);
+                            return KV;
                         });
 
         MessageStream<Auction> repartitionedAuctions =
                 auctions
-                        .partitionBy(ac -> String.valueOf(ac.getSeller()), ac -> ac, KVSerde.of(stringSerde, auctionSerde), "auction")
-                        .map(KV::getValue);
+//                        .partitionBy(ac -> String.valueOf(ac.getSeller()), ac -> ac, KVSerde.of(stringSerde, auctionSerde), "auction")
+                        .map(KV -> {
+//                            delay(1);
+                            return KV;
+                        });
+
 
         JoinFunction<String, Auction, Person, String> joinFunction =
                 new JoinFunction<String, Auction, Person, String>() {
@@ -125,5 +132,16 @@ public class Query8 implements StreamApplication, Serializable {
             return "joinResult: { personId:" + personId + ", personName: " + personName + ", auctionReserve: " + auctionReserve + "}";
 
         }
+    }
+
+    private void delay(int interval) {
+        Double ranN = randomGen.nextGaussian(interval, 1);
+//        ranN = ranN*1000;
+//        ranN = ranN*1000;
+//        long delay = ranN.intValue();
+//        if (delay < 0) delay = 6000;
+        long delay = interval*100000;
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < delay) {}
     }
 }

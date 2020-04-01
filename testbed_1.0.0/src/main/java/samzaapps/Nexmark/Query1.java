@@ -2,10 +2,13 @@ package samzaapps.Nexmark;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.*;
 
 import joptsimple.OptionSet;
+import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.samza.application.StreamApplication;
 import org.apache.samza.application.descriptors.StreamApplicationDescriptor;
 import org.apache.samza.config.Config;
@@ -26,7 +29,7 @@ import samzaapps.Nexmark.serde.Bid;
 import samzaapps.Nexmark.serde.Person;
 
 
-public class Query1 implements StreamApplication {
+public class Query1 implements StreamApplication, Serializable {
 
     private static final String KAFKA_SYSTEM_NAME = "kafka";
     private static final List<String> KAFKA_CONSUMER_ZK_CONNECT = ImmutableList.of("localhost:2181");
@@ -35,6 +38,7 @@ public class Query1 implements StreamApplication {
 
     private static final String BID_STREAM = "bids";
     private static final String OUTPUT_STREAM_ID = "results";
+    private RandomDataGenerator randomGen = new RandomDataGenerator();
 
     @Override
     public void describe(StreamApplicationDescriptor appDescriptor) {
@@ -64,6 +68,10 @@ public class Query1 implements StreamApplication {
         OutputStream<KV<String, String>> results = appDescriptor.getOutputStream(outputDescriptor);
 
         bids
+                .map(kv -> {
+                    delay(1);
+                    return kv;
+                })
                 .map(bid -> KV.of(String.valueOf(bid.getAuction()),
                 String.valueOf(bid.getAuction()) + dollarToEuro(bid.getPrice(), 0.82F) + bid.getBidder() + bid.getDateTime()))
                 .sendTo(results);
@@ -71,5 +79,16 @@ public class Query1 implements StreamApplication {
 
     private static long dollarToEuro(long dollarPrice, float rate) {
         return (long) (rate*dollarPrice);
+    }
+
+    private void delay(int interval) {
+        Double ranN = randomGen.nextGaussian(interval, 1);
+//        ranN = ranN*1000;
+//        ranN = ranN*1000;
+//        long delay = ranN.intValue();
+//        if (delay < 0) delay = 6000;
+        long delay = interval*1000000;
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < delay) {}
     }
 }

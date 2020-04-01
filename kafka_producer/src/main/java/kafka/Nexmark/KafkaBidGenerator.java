@@ -45,6 +45,8 @@ public class KafkaBidGenerator {
 
         long emitStartTime = 0;
 
+        int curRate = rate;
+
         while (running && eventsCountSoFar < 20_000_000) {
 
             emitStartTime = System.currentTimeMillis();
@@ -53,12 +55,12 @@ public class KafkaBidGenerator {
                 // change input rate every 1 second.
                 epoch++;
                 System.out.println();
-                int curRate = changeRate(epoch);
+                curRate = changeRate(epoch);
                 System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
                 count = 0;
             }
 
-            for (int i = 0; i < Integer.valueOf(rate/20); i++) {
+            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
 
                 long nextId = nextId();
                 Random rnd = new Random(nextId);
@@ -68,6 +70,8 @@ public class KafkaBidGenerator {
                         config.timestampAndInterEventDelayUsForEvent(
                                 config.nextEventNumber(eventsCountSoFar)).getKey();
 
+//                ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, null, System.currentTimeMillis(), nextId,
+//                        BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
                 ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, nextId,
                         BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
                 producer.send(newRecord);
