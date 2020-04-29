@@ -14,7 +14,6 @@ class Order {
     /**
      * The user that viewed the page
      */
-    public String[] orderList;
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Order_Price = 8;
@@ -23,67 +22,48 @@ class Order {
     private static final int Sec_Code = 11;
     private static final int Trade_Dir = 22;
 
-    private Map<String, String> orderMap = new HashMap<String, String>();
+    private String[] orderArr;
 
     Order(String[] orderArr) {
-        String orderNo = orderArr[Order_No];
-        String tranMaintCode = orderArr[Tran_Maint_Code];
-
-        orderMap.put("Order_No", orderNo);
-        orderMap.put("Tran_Maint_Code", tranMaintCode);
-        if (!tranMaintCode.equals("")) {
-            orderMap.put("Order_Price", orderArr[Order_Price]);
-            orderMap.put("Order_Exec_Vol", orderArr[Order_Exec_Vol]);
-            orderMap.put("Order_Vol", orderArr[Order_Vol]);
-            orderMap.put("Sec_Code", orderArr[Sec_Code]);
-            orderMap.put("Trade_Dir", orderArr[Trade_Dir]);
-        }
+        this.orderArr = orderArr;
     }
 
     String getOrderNo() {
-        return orderMap.get("Order_No");
+        return orderArr[Order_No];
     }
     String getTranMaintCode() {
-        return orderMap.get("Tran_Maint_Code");
+        return orderArr[Tran_Maint_Code];
     }
-    float getOrderPrice() {
-        return Float.parseFloat(orderMap.get("Order_Price"));
+    int getOrderPrice() {
+        Float price = Float.parseFloat(orderArr[Order_Price]) * 100000;
+        return price.intValue();
     }
-    int getOrderExecVol() {
-        Float interOrderExecVol = Float.parseFloat(orderMap.get("Order_Exec_Vol"));
+    private int getOrderExecVol() {
+        Float interOrderExecVol = Float.parseFloat(orderArr[Order_Exec_Vol]);
         return interOrderExecVol.intValue();
     }
     int getOrderVol() {
-        Float interOrderVol = Float.parseFloat(orderMap.get("Order_Vol"));
+        Float interOrderVol = Float.parseFloat(orderArr[Order_Vol]);
         return interOrderVol.intValue();
     }
     String getSecCode() {
-        return orderMap.get("Sec_Code");
+        return orderArr[Sec_Code];
     }
     String getTradeDir() {
-        return orderMap.get("Trade_Dir");
+        return orderArr[Trade_Dir];
     }
 
-    String getKey(String key) {
-        return orderMap.get(key);
+    public String getKey(int key) {
+        return orderArr[key];
     }
 
-    String objToString() {
-        StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append(orderMap.get("Order_No")).append("|");
-        messageBuilder.append(orderMap.get("Tran_Maint_Code")).append("|");
-        messageBuilder.append(orderMap.get("Order_Price")).append("|");
-        messageBuilder.append(orderMap.get("Order_Exec_Vol")).append("|");
-        messageBuilder.append(orderMap.get("Order_Vol")).append("|");
-        messageBuilder.append(orderMap.get("Sec_Code")).append("|");
-        messageBuilder.append(orderMap.get("Trade_Dir"));
-        return messageBuilder.toString();
-        // return String.join("|", this.orderList);
+    @Override
+    public String toString() {
+        return String.join("|", orderArr);
     }
 
-    public boolean updateOrder(int otherOrderVol) {
-        orderMap.put("Order_Vol", (this.getOrderVol() - otherOrderVol) + "");
-        orderMap.put("Order_Exec_Vol", (this.getOrderExecVol() + otherOrderVol) + "");
-        return true;
+    void updateOrder(int otherOrderVol) {
+        orderArr[Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
+        orderArr[Order_Exec_Vol] = (this.getOrderExecVol() + otherOrderVol) + "";
     }
 }
