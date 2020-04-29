@@ -68,9 +68,11 @@ public class SSERealRateGenerator {
             while ((sCurrentLine = br.readLine()) != null) {
 
                 if (sCurrentLine.equals("CALLAUCTIONEND")) {
-                    Thread.sleep(60000);
                     // dont let later process be affected
                     sleepCnt += 60000/INTERVAL;
+                    System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
+                    counter = 0;
+                    Thread.sleep(60000);
                 }
 
                 if (sCurrentLine.equals("end")) {
