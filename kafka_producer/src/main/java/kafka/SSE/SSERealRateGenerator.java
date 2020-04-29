@@ -76,11 +76,13 @@ public class SSERealRateGenerator {
                     sleepCnt += 60000/INTERVAL;
                     System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
+
+                    Thread.sleep(30000);
                     for (int partition=0; partition<64; partition++) {
                         ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, partition, String.valueOf(partition), sCurrentLine);
                         producer.send(newRecord);
                     }
-                    Thread.sleep(600000);
+                    Thread.sleep(30000);
                 }
 
                 if (sCurrentLine.equals("end")) {
