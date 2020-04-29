@@ -67,12 +67,22 @@ public class SSERealRateGenerator {
 
             while ((sCurrentLine = br.readLine()) != null) {
 
+                if (sleepCnt == 0 && counter % 10000 == 0) {
+                    System.out.println("sleep");
+                    Thread.sleep(50);
+                }
+
+
                 if (sCurrentLine.equals("CALLAUCTIONEND")) {
                     // dont let later process be affected
                     sleepCnt += 60000/INTERVAL;
                     System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
-                    Thread.sleep(60000);
+                    for (int partition=0; partition<64; partition++) {
+                        ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, partition, String.valueOf(partition), sCurrentLine);
+                        producer.send(newRecord);
+                    }
+                    Thread.sleep(600000);
                 }
 
                 if (sCurrentLine.equals("end")) {
@@ -98,19 +108,17 @@ public class SSERealRateGenerator {
                     continue;
                 }
 
-                String date = orderArr[2] + " " + orderArr[3] + "," + orderArr[4].split("\\.")[1].substring(0,3);
+                String date = orderArr[2] + "  " + orderArr[3] + "," + orderArr[4].split("\\.")[1].substring(0,3);
 //                System.out.println(getTime(date).getTime());
 
                 for (int i=0; i< REPEAT; i++) {
 //                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, null, getTime(date).getTime(), sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
-                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, null, getTime(date).getTime(), sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, sCurrentLine.split("\\|")[Sec_Code], sCurrentLine);
                     producer.send(newRecord);
                     counter++;
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
             e.printStackTrace();
         } finally {
             try {
