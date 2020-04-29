@@ -1,42 +1,16 @@
 package samzatask.stock;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.samza.context.Context;
-import org.apache.samza.operators.KV;
-import org.apache.samza.storage.kv.Entry;
-import org.apache.samza.storage.kv.KeyValueIterator;
-import org.apache.samza.storage.kv.KeyValueStore;
-import org.apache.samza.system.IncomingMessageEnvelope;
-import org.apache.samza.system.OutgoingMessageEnvelope;
-import org.apache.samza.system.SystemStream;
-import org.apache.samza.task.InitableTask;
-import org.apache.samza.task.MessageCollector;
-import org.apache.samza.task.StreamTask;
-import org.apache.samza.task.TaskCoordinator;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Serializable;
-import java.net.URI;
 import java.util.*;
-
-import org.apache.samza.config.Config;
 
 import static samzatask.stock.utils.sortMapBykeyAsc;
 import static samzatask.stock.utils.sortMapBykeyDesc;
 
-/**
- * This is a simple task that writes each message to a state store and prints them all out on reload.
- *
- * It is useful for command line testing with the kafka console producer and consumer and text messages.
- */
-public class StockExchangeTask implements StreamTask, InitableTask, Serializable {
+public class StockExchangeSimuV2 {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
     private static final int Last_Upd_Time = 3;
@@ -49,120 +23,21 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
     private static final String FILTER_KEY3 = "";
-    private Map<String, Map<Float, List<Order>>> pool = new HashMap<>();
-    private Map<String, List<Float>> poolPrice = new HashMap<>();
 
-    private final Config config;
-    private static final int DefaultDelay = 5;
-
-    private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
-    private KeyValueStore<String, String> stockExchangeMapSell;
-    private KeyValueStore<String, String> stockExchangeMapBuy;
-    private RandomDataGenerator randomGen = new RandomDataGenerator();
+    public Map<String, String> stockExchangeMapSell;
+    public Map<String, String> stockExchangeMapBuy;
 
     // pool is a architecture used to do stock transaction, we can use collction.sort to sort orders by price.
     // then we need to sort order by timestamp, im not sure how to do this now...
     private Map<String, HashMap<Integer, ArrayList<Order>>> poolS = new HashMap<>();
     private Map<String, HashMap<Integer, ArrayList<Order>>> poolB = new HashMap<>();
 
-    private Map<Integer, ArrayList<Order>> specPoolS = new HashMap<>();
-    private Map<Integer, ArrayList<Order>> specPoolB = new HashMap<>();
 
-    private int continuousAuction = 92500;
+    public StockExchangeSimuV2() {
+        this.stockExchangeMapSell = new HashMap<>();
+        this.stockExchangeMapBuy = new HashMap<>();
 
-    public StockExchangeTask(Config config) {
-        this.config = config;
     }
-
-    @SuppressWarnings("unchecked")
-    public void init(Context context) {
-        this.stockExchangeMapSell = (KeyValueStore<String, String>) context.getTaskContext().getStore("stock-exchange-sell");
-        this.stockExchangeMapBuy = (KeyValueStore<String, String>) context.getTaskContext().getStore("stock-exchange-buy");
-        // load the pool
-        loadPool();
-        System.out.println("+++++Store loaded successfully!");
-    }
-
-    public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
-        String stockOrder = (String) envelope.getMessage();
-        String[] orderArr = stockOrder.split("\\|");
-        Map<String, String> matchedResult = new HashMap<>();
-
-        if (stockOrder.equals("CALLAUCTIONEND")) {
-            // start to do call auction
-            callAuction();
-        }
-
-        //filter
-        if (orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
-            return;
-        }
-
-        int curTime = Integer.parseInt(orderArr[Last_Upd_Time].replace(":", ""));
-
-        if (curTime < continuousAuction) {
-            // store all orders at maps
-            if (orderArr[Tran_Maint_Code].equals("D")) {
-                if (orderArr[Trade_Dir].equals("S")) {
-                    stockExchangeMapSell.delete(orderArr[Order_No]);
-                } else if (orderArr[Trade_Dir].equals("B")) {
-                    stockExchangeMapBuy.delete(orderArr[Order_No]);
-                }
-            } else {
-
-                if (orderArr[Trade_Dir].equals("S")) {
-                    stockExchangeMapSell.put(orderArr[Order_No], stockOrder);
-                } else if (orderArr[Trade_Dir].equals("B")) {
-                    stockExchangeMapBuy.put(orderArr[Order_No], stockOrder);
-                } else {
-                    System.out.println("++++ error direction");
-                }
-            }
-        } else {
-            matchedResult = continuousStockExchange(orderArr, orderArr[Trade_Dir]);
-        }
-
-        collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, orderArr[Sec_Code], stockOrder));
-    }
-
-    public void loadPool() {
-        // load pool from state backend, then do matchmaking by use old logic
-        KeyValueIterator<String, String> buyIter = stockExchangeMapBuy.all();
-        KeyValueIterator<String, String> sellIter = stockExchangeMapSell.all();
-
-        while (buyIter.hasNext()) {
-            Entry<String, String> entry = buyIter.next();
-            String orderNo = entry.getKey();
-            String[] curBuyerOrder = entry.getValue().split("\\|");
-            Order curOrder = new Order(curBuyerOrder);
-            String curSecCode = curOrder.getSecCode();
-            int curOrderPrice = curOrder.getOrderPrice();
-
-            HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(curSecCode, new HashMap<>());
-            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
-            // need to keep pool price be sorted, so insert it into pool price
-            curOrderList.add(curOrder);
-            curPool.put(curOrderPrice, curOrderList);
-            poolB.put(curOrder.getSecCode(), curPool);
-        }
-
-        while (sellIter.hasNext()) {
-            Entry<String, String> entry = sellIter.next();
-            String orderNo = entry.getKey();
-            String[] curBuyerOrder = entry.getValue().split("\\|");
-            Order curOrder = new Order(curBuyerOrder);
-            String curSecCode = curOrder.getSecCode();
-            int curOrderPrice = curOrder.getOrderPrice();
-
-            HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(curSecCode, new HashMap<>());
-            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
-            // need to keep pool price be sorted, so insert it into pool price
-            curOrderList.add(curOrder);
-            curPool.put(curOrderPrice, curOrderList);
-            poolS.put(curOrder.getSecCode(), curPool);
-        }
-    }
-
 
     public void callAuction() {
         // do call auction
@@ -310,7 +185,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         Order targetOrder = null;
 
         if (direction.equals("S")) {
-            stockExchangeMapSell.delete(orderNo);
+            stockExchangeMapSell.remove(orderNo);
             HashMap<Integer, ArrayList<Order>> curSellPool = poolS.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curSellOrders = curSellPool.getOrDefault(orderPrice, new ArrayList<>());
 
@@ -325,7 +200,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             poolS.replace(curOrder.getSecCode(),curSellPool);
         }
         if (direction.equals("B")) {
-            stockExchangeMapBuy.delete(orderNo);
+            stockExchangeMapBuy.remove(orderNo);
             HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curBuyOrders = curBuyPool.getOrDefault(orderPrice, new ArrayList<>());
             for (Order order : curBuyOrders) {
@@ -378,27 +253,68 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 //            System.out.println(stockExchangeMapSell.containsKey(tradedSellOrder.getOrderNo()) + " "
 //                    + tradedSellOrder.toString());
             curSellOrders.remove(tradedSellOrder);
-            stockExchangeMapSell.delete(tradedSellOrder.getOrderNo());
+            stockExchangeMapSell.remove(tradedSellOrder.getOrderNo());
         }
 
         for (Order tradedBuyOrder : tradedBuyOrders) {
 //            System.out.println(stockExchangeMapBuy.containsKey(tradedBuyOrder.getOrderNo()) + " "
 //                    + tradedBuyOrder.toString());
             curBuyOrders.remove(tradedBuyOrder);
-            stockExchangeMapBuy.delete(tradedBuyOrder.getOrderNo());
+            stockExchangeMapBuy.remove(tradedBuyOrder.getOrderNo());
         }
 
         // update orders half traded.
         for (Order halfTradedSellOrder : curSellOrders) {
-            stockExchangeMapSell.put(halfTradedSellOrder.getOrderNo(), halfTradedSellOrder.toString());
+            stockExchangeMapSell.replace(halfTradedSellOrder.getOrderNo(), halfTradedSellOrder.toString());
         }
 
         for (Order halfTradedBuyOrder : curBuyOrders) {
-            stockExchangeMapBuy.put(halfTradedBuyOrder.getOrderNo(), halfTradedBuyOrder.toString());
+            stockExchangeMapBuy.replace(halfTradedBuyOrder.getOrderNo(), halfTradedBuyOrder.toString());
+        }
+    }
+
+    public void loadPool() {
+        // load pool from state backend, then do matchmaking by use old logic
+        Iterator buyIter = stockExchangeMapBuy.entrySet().iterator();
+        Iterator sellIter = stockExchangeMapSell.entrySet().iterator();
+
+        while (buyIter.hasNext()) {
+            Map.Entry<String, String> entry = (Map.Entry<String, String>) buyIter.next();
+            String orderNo = entry.getKey();
+            String[] curBuyerOrder = entry.getValue().split("\\|");
+            Order curOrder = new Order(curBuyerOrder);
+            String curSecCode = curOrder.getSecCode();
+            int curOrderPrice = curOrder.getOrderPrice();
+
+            HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(curSecCode, new HashMap<>());
+            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+            // need to keep pool price be sorted, so insert it into pool price
+            curOrderList.add(curOrder);
+            curPool.put(curOrderPrice, curOrderList);
+            poolB.put(curOrder.getSecCode(), curPool);
+        }
+
+        while (sellIter.hasNext()) {
+            Map.Entry<String, String> entry = (Map.Entry<String, String>) sellIter.next();
+            String orderNo = entry.getKey();
+            String[] curBuyerOrder = entry.getValue().split("\\|");
+            Order curOrder = new Order(curBuyerOrder);
+            String curSecCode = curOrder.getSecCode();
+            int curOrderPrice = curOrder.getOrderPrice();
+
+            HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(curSecCode, new HashMap<>());
+            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+            // need to keep pool price be sorted, so insert it into pool price
+            curOrderList.add(curOrder);
+            curPool.put(curOrderPrice, curOrderList);
+            poolS.put(curOrder.getSecCode(), curPool);
         }
     }
 
     public void metricsDump() {
+        System.out.println("stockExchangeMapSell: " + stockExchangeMapSell.size() + " stockExchangeMapBuy: " + stockExchangeMapBuy.size()
+                + " total: " + (stockExchangeMapSell.size() + stockExchangeMapBuy.size()));
+
         int totalSellIndex = 0;
         for (Map.Entry entry : poolS.entrySet()) {
             HashMap<Integer, ArrayList<Order>> curPool = (HashMap<Integer, ArrayList<Order>>) entry.getValue();
@@ -419,5 +335,76 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
         System.out.println("sell size: " + totalSellIndex + " buy size: "
                 + totalBuyIndex + " total size: " + (totalBuyIndex+totalSellIndex));
+    }
+
+    public static void main(String[] args) throws IOException {
+        // 1. do call auction, just buffer all tuples, and after reading the CALLAUCTION flag, do call auction
+        //      details: store them into map, then sort them all, then for loop to match buyer and seller
+        //      don't mind the performance, it is enough to use.
+        // 2. do continuous auction based on current state, now the state size is very big, should be that big, otherwise, there are some bugs.
+        // 3. in match maker, first sort all orders by its price, then in every price, sort their time, then do matchmake for sell and buy.
+        // 4. if is sell, only sort buy, and do matchmaking, if is buy, sort sell, and do matchmaking,
+        //    and delete those who has vol=0, append this order to waiting buy, if vol>0
+        StockExchangeSimuV2 ses = new StockExchangeSimuV2();
+//        ses.loadPool();
+
+        String sCurrentLine;
+        List<String> textList = new ArrayList<>();
+        FileReader stream = null;
+        // // for loop to generate message
+        BufferedReader br = null;
+        int noRecSleepCnt = 0;
+        stream = new FileReader("/root/SSE-kafka-producer/sb-opening-50ms.txt");
+        br = new BufferedReader(stream);
+
+        int interval = 1000000000/1000;
+
+        RandomDataGenerator randomGen = new RandomDataGenerator();
+
+
+//        boolean continuousAuction = false;
+        int continuousAuction = 92500;
+
+        while ((sCurrentLine = br.readLine()) != null) {
+            if (sCurrentLine.equals("end")) {
+                continue;
+            }
+
+            if (sCurrentLine.equals("CALLAUCTIONEND")) {
+                // start to do call auction
+                ses.callAuction();
+            }
+            if (sCurrentLine.split("\\|").length < 10) {
+                continue;
+            }
+            String[] orderArr = sCurrentLine.split("\\|");
+
+            if (orderArr[Tran_Maint_Code].equals(FILTER_KEY2) || orderArr[Tran_Maint_Code].equals(FILTER_KEY3)) {
+                continue;
+            }
+
+            int curTime = Integer.parseInt(orderArr[Last_Upd_Time].replace(":", ""));
+
+            if (curTime < continuousAuction) {
+                // store all orders at maps
+                if (orderArr[Tran_Maint_Code].equals("D")) {
+                    if (orderArr[Trade_Dir].equals("S")) {
+                        ses.stockExchangeMapSell.remove(orderArr[Order_No]);
+                    } else if (orderArr[Trade_Dir].equals("B")) {
+                        ses.stockExchangeMapBuy.remove(orderArr[Order_No]);
+                    }
+                } else {
+                    if (orderArr[Trade_Dir].equals("S")) {
+                        ses.stockExchangeMapSell.put(orderArr[Order_No], sCurrentLine);
+                    } else if (orderArr[Trade_Dir].equals("B")) {
+                        ses.stockExchangeMapBuy.put(orderArr[Order_No], sCurrentLine);
+                    } else {
+                        System.out.println("++++ error direction");
+                    }
+                }
+            } else {
+                Map<String, String> matchedResult = ses.continuousStockExchange(orderArr, orderArr[Trade_Dir]);
+            }
+        }
     }
 }
