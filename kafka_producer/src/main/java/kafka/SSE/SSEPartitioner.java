@@ -18,19 +18,19 @@ public class SSEPartitioner implements Partitioner {
         int partition = 0;
         String combinedKey = (String) key;
         int stockId = Integer.parseInt(combinedKey.split("\\|")[0]);
-//        if (stockId > 0) {
-//            partition = stockId % partitionNum;
-//        }
-        if (!stockToPartition.containsKey(stockId)) {
-//            System.out.println(String.format("map stockId %d to %d", stockId, leftPartition));
-            stockToPartition.put(stockId, leftPartition);
-            leftPartition++;
-        }
-        partition = stockToPartition.get(stockId);
-        if (partition > partitionNum) {
-//            System.out.println(String.format("+++Wrong...partition: %d, max partition: %d", partition, partitionNum));
+        if (stockId > 0) {
             partition = stockId % partitionNum;
         }
+//        if (!stockToPartition.containsKey(stockId)) {
+////            System.out.println(String.format("map stockId %d to %d", stockId, leftPartition));
+//            stockToPartition.put(stockId, leftPartition);
+//            leftPartition++;
+//        }
+//        partition = stockToPartition.get(stockId);
+//        if (partition > partitionNum) {
+////            System.out.println(String.format("+++Wrong...partition: %d, max partition: %d", partition, partitionNum));
+//            partition = stockId % partitionNum;
+//        }
         return partition;
     }
 
