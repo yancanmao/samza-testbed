@@ -93,6 +93,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             // start to do call auction
             callAuction();
             callAuctionAllowed = false;
+            return;
         }
 
         //filter
