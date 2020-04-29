@@ -69,6 +69,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private Map<Integer, ArrayList<Order>> specPoolB = new HashMap<>();
 
     private int continuousAuction = 92500;
+    private boolean callAuctionAllowed = true;
 
     public StockExchangeTask(Config config) {
         this.config = config;
@@ -88,9 +89,10 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         String[] orderArr = stockOrder.split("\\|");
         Map<String, String> matchedResult = new HashMap<>();
 
-        if (stockOrder.equals("CALLAUCTIONEND")) {
+        if (stockOrder.equals("CALLAUCTIONEND") && callAuctionAllowed) {
             // start to do call auction
             callAuction();
+            callAuctionAllowed = false;
         }
 
         //filter
