@@ -44,7 +44,7 @@ public class SSERealRateGenerator {
 
     }
 
-    public void generate(String FILE, int REPEAT, int INTERVAL) throws InterruptedException {
+    public void generate(String FILE, int REPEAT, int INTERVAL, int PARTITIONSIZE) throws InterruptedException {
 
         String sCurrentLine;
         List<String> textList = new ArrayList<>();
@@ -78,11 +78,11 @@ public class SSERealRateGenerator {
                     counter = 0;
 
                     Thread.sleep(30000);
-                    for (int partition=0; partition<64; partition++) {
+                    for (int partition=0; partition<PARTITIONSIZE; partition++) {
                         ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, partition, String.valueOf(partition), sCurrentLine);
                         producer.send(newRecord);
                     }
-                    Thread.sleep(30000);
+                    Thread.sleep(120000);
                 }
 
                 if (sCurrentLine.equals("end")) {
@@ -141,10 +141,11 @@ public class SSERealRateGenerator {
         int REPEAT = params.getInt("repeat", 1);
         String BROKERS = params.get("host", "camel:9092");
         int INTERVAL = params.getInt("interval", 1000);
+        int PARTITIONSIZE = params.getInt("partition", 64);
 
-        System.out.println(TOPIC + FILE + REPEAT + BROKERS);
+        System.out.println(TOPIC + FILE + REPEAT + BROKERS + PARTITIONSIZE);
 
-        new SSERealRateGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL);
+        new SSERealRateGenerator(TOPIC, BROKERS).generate(FILE, REPEAT, INTERVAL, PARTITIONSIZE);
     }
 
     private static Date getTime(String time) throws ParseException {
