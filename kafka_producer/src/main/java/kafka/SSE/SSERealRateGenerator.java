@@ -73,7 +73,7 @@ public class SSERealRateGenerator {
 
                 if (sCurrentLine.equals("CALLAUCTIONEND")) {
                     // dont let later process be affected
-                    sleepCnt += 60000/INTERVAL;
+                    sleepCnt += 150000/INTERVAL;
                     System.out.println("output rate: " + counter + " per " + INTERVAL + "ms");
                     counter = 0;
 
