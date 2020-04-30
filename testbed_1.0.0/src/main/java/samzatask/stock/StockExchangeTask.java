@@ -65,9 +65,6 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private Map<String, HashMap<Integer, ArrayList<Order>>> poolS = new HashMap<>();
     private Map<String, HashMap<Integer, ArrayList<Order>>> poolB = new HashMap<>();
 
-    private Map<Integer, ArrayList<Order>> specPoolS = new HashMap<>();
-    private Map<Integer, ArrayList<Order>> specPoolB = new HashMap<>();
-
     private int continuousAuction = 92500;
     private boolean callAuctionAllowed = true;
 
@@ -103,25 +100,29 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
         int curTime = Integer.parseInt(orderArr[Last_Upd_Time].replace(":", ""));
 
+        Order curOrder = new Order(orderArr);
+
         if (curTime < continuousAuction) {
             // store all orders at maps
             if (orderArr[Tran_Maint_Code].equals("D")) {
-                if (orderArr[Trade_Dir].equals("S")) {
-                    stockExchangeMapSell.delete(orderArr[Order_No]);
-                } else if (orderArr[Trade_Dir].equals("B")) {
-                    stockExchangeMapBuy.delete(orderArr[Order_No]);
-                }
+//                if (orderArr[Trade_Dir].equals("S")) {
+//                    stockExchangeMapSell.delete(orderArr[Order_No]);
+//                } else if (orderArr[Trade_Dir].equals("B")) {
+//                    stockExchangeMapBuy.delete(orderArr[Order_No]);
+//                }
+                deleteOrder(curOrder, orderArr[Trade_Dir]);
             } else {
-
-                if (orderArr[Trade_Dir].equals("S")) {
-                    stockExchangeMapSell.put(orderArr[Order_No], stockOrder);
-                } else if (orderArr[Trade_Dir].equals("B")) {
-                    stockExchangeMapBuy.put(orderArr[Order_No], stockOrder);
-                } else {
-                    System.out.println("++++ error direction");
-                }
+//                if (orderArr[Trade_Dir].equals("S")) {
+//                    stockExchangeMapSell.put(orderArr[Order_No], stockOrder);
+//                } else if (orderArr[Trade_Dir].equals("B")) {
+//                    stockExchangeMapBuy.put(orderArr[Order_No], stockOrder);
+//                } else {
+//                    System.out.println("++++ error direction");
+//                }
+                insertPool(curOrder);
             }
         } else {
+            delay(config.getInt("job.delay.time.ms", DefaultDelay));
             matchedResult = continuousStockExchange(orderArr, orderArr[Trade_Dir]);
         }
 
@@ -135,7 +136,6 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
         while (buyIter.hasNext()) {
             Entry<String, String> entry = buyIter.next();
-            String orderNo = entry.getKey();
             String[] curBuyerOrder = entry.getValue().split("\\|");
             Order curOrder = new Order(curBuyerOrder);
             String curSecCode = curOrder.getSecCode();
@@ -151,9 +151,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
         while (sellIter.hasNext()) {
             Entry<String, String> entry = sellIter.next();
-            String orderNo = entry.getKey();
-            String[] curBuyerOrder = entry.getValue().split("\\|");
-            Order curOrder = new Order(curBuyerOrder);
+            String[] curSellerOrder = entry.getValue().split("\\|");
+            Order curOrder = new Order(curSellerOrder);
             String curSecCode = curOrder.getSecCode();
             int curOrderPrice = curOrder.getOrderPrice();
 
@@ -171,8 +170,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         // do call auction
         // 1. sort buy order and sell order by price and timestamp
         System.out.println("Start call auction");
-
-        loadPool();
+//        loadPool();
 
         // 2. do stock exchange on every stock id
         for (Map.Entry poolBentry : poolB.entrySet()) {
@@ -214,13 +212,15 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
             metricsDump();
         }
+
+        auctionFlush();
     }
 
     public Map<String, String> continuousStockExchange(String[] orderArr, String direction) {
         long start = System.currentTimeMillis();
         Map<String, String> matchedResult = new HashMap<>();
 
-        metricsDump();
+//        metricsDump();
 
         Order curOrder = new Order(orderArr);
         // delete stock orderm, index still needs to be deleted
@@ -351,6 +351,28 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
     }
 
+    public void insertPool(Order curOrder) {
+        String curSecCode = curOrder.getSecCode();
+        int curOrderPrice = curOrder.getOrderPrice();
+        String direction = curOrder.getTradeDir();
+
+        if (direction.equals("B")) {
+            HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(curSecCode, new HashMap<>());
+            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+            // need to keep pool price be sorted, so insert it into pool price
+            curOrderList.add(curOrder);
+            curPool.put(curOrderPrice, curOrderList);
+            poolB.put(curOrder.getSecCode(), curPool);
+        } else {
+            HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(curSecCode, new HashMap<>());
+            ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+            // need to keep pool price be sorted, so insert it into pool price
+            curOrderList.add(curOrder);
+            curPool.put(curOrderPrice, curOrderList);
+            poolS.put(curOrder.getSecCode(), curPool);
+        }
+    }
+
     public void stockExchange(ArrayList<Order> curBuyOrders, ArrayList<Order> curSellOrders) {
         ArrayList<Order> tradedBuyOrders = new ArrayList<>();
         ArrayList<Order> tradedSellOrders = new ArrayList<>();
@@ -401,6 +423,28 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
     }
 
+    public void auctionFlush() {
+        for (Map.Entry entry : poolS.entrySet()) {
+            HashMap<Integer, ArrayList<Order>> curPool = (HashMap<Integer, ArrayList<Order>>) entry.getValue();
+            for (Map.Entry entry1 : curPool.entrySet()) {
+                ArrayList<Order> orderList = (ArrayList<Order>) entry1.getValue();
+                for (Order order : orderList) {
+                    stockExchangeMapSell.put(order.getOrderNo(), order.toString());
+                }
+            }
+        }
+
+        for (Map.Entry entry : poolB.entrySet()) {
+            HashMap<Integer, ArrayList<Order>> curPool = (HashMap<Integer, ArrayList<Order>>) entry.getValue();
+            for (Map.Entry entry1 : curPool.entrySet()) {
+                ArrayList<Order> orderList = (ArrayList<Order>) entry1.getValue();
+                for (Order order : orderList) {
+                    stockExchangeMapBuy.put(order.getOrderNo(), order.toString());
+                }
+            }
+        }
+    }
+
     public void metricsDump() {
         int totalSellIndex = 0;
         for (Map.Entry entry : poolS.entrySet()) {
@@ -422,5 +466,14 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
         System.out.println("sell size: " + totalSellIndex + " buy size: "
                 + totalBuyIndex + " total size: " + (totalBuyIndex+totalSellIndex));
+    }
+
+    private void delay(int interval) {
+        Double ranN = randomGen.nextGaussian(interval, 1);
+        ranN = ranN*1000000;
+        long delay = ranN.intValue();
+        if (delay < 0) delay = 6000000;
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < delay) {}
     }
 }
