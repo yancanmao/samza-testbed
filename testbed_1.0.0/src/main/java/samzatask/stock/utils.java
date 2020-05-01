@@ -1,5 +1,7 @@
 package samzatask.stock;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.*;
 
 public class utils {
@@ -59,5 +61,18 @@ public class utils {
         } catch (Exception e) {
         }
         return sortedMap;
+    }
+
+    public static ArrayList<Order> strToList(String stateVal) {
+        ArrayList<Order> orderList = new ArrayList<>();
+        ArrayList<String> orderStrList = new ArrayList<>(Arrays.asList(stateVal.split(",")));
+        for (String orderStr : orderStrList) {
+            orderList.add(new Order(orderStr.split("\\|")));
+        }
+        return orderList;
+    }
+
+    public static String listToStr(ArrayList<Order> orderList) {
+        return  StringUtils.join(orderList, ",");
     }
 }
