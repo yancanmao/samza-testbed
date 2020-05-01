@@ -1,13 +1,8 @@
 package samzatask.stock;
 
 import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.samza.config.Config;
 import org.apache.samza.context.Context;
-import org.apache.samza.operators.KV;
 import org.apache.samza.storage.kv.Entry;
 import org.apache.samza.storage.kv.KeyValueIterator;
 import org.apache.samza.storage.kv.KeyValueStore;
@@ -19,32 +14,28 @@ import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.net.URI;
-import java.util.*;
-
-import org.apache.samza.config.Config;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static samzatask.stock.utils.*;
-import static samzatask.stock.utils.listToStr;
 
 /**
  * This is a simple task that writes each message to a state store and prints them all out on reload.
  *
  * It is useful for command line testing with the kafka console producer and consumer and text messages.
  */
-public class StockExchangeTask implements StreamTask, InitableTask, Serializable {
+public class StockExchangeTaskV1 implements StreamTask, InitableTask, Serializable {
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
-    private static final int Last_Upd_Time = 2;
-    private static final int Order_Price = 3;
-    private static final int Order_Exec_Vol = 4;
-    private static final int Order_Vol = 5;
-    private static final int Sec_Code = 6;
-    private static final int Trade_Dir = 7;
+    private static final int Last_Upd_Time = 3;
+    private static final int Order_Price = 8;
+    private static final int Order_Exec_Vol = 9;
+    private static final int Order_Vol = 10;
+    private static final int Sec_Code = 11;
+    private static final int Trade_Dir = 22;
 
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
@@ -68,7 +59,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private int continuousAuction = 92500;
     private boolean callAuctionAllowed = true;
 
-    public StockExchangeTask(Config config) {
+    public StockExchangeTaskV1(Config config) {
         this.config = config;
     }
 

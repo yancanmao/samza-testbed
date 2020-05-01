@@ -98,7 +98,7 @@ public class StockExchangeSimuV2 {
         long start = System.currentTimeMillis();
         Map<String, String> matchedResult = new HashMap<>();
 
-//        metricsDump();
+        metricsDump();
 
         Order curOrder = new Order(orderArr);
         // delete stock orderm, index still needs to be deleted
@@ -458,7 +458,9 @@ public class StockExchangeSimuV2 {
 //        boolean continuousAuction = false;
         int continuousAuction = 92500;
 
-        while ((sCurrentLine = br.readLine()) != null) {
+        long start = System.currentTimeMillis();
+
+        while ((sCurrentLine = br.readLine()) != null && (System.currentTimeMillis() - start) < 300000) {
             if (sCurrentLine.equals("end")) {
                 continue;
             }

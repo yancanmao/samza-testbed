@@ -11,14 +11,23 @@ import java.util.*;
 import static samzatask.stock.utils.*;
 
 public class StockExchangeSimuV3 {
+//    private static final int Order_No = 0;
+//    private static final int Tran_Maint_Code = 1;
+//    private static final int Last_Upd_Time = 3;
+//    private static final int Order_Price = 8;
+//    private static final int Order_Exec_Vol = 9;
+//    private static final int Order_Vol = 10;
+//    private static final int Sec_Code = 11;
+//    private static final int Trade_Dir = 22;
+
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
-    private static final int Last_Upd_Time = 3;
-    private static final int Order_Price = 8;
-    private static final int Order_Exec_Vol = 9;
-    private static final int Order_Vol = 10;
-    private static final int Sec_Code = 11;
-    private static final int Trade_Dir = 22;
+    private static final int Last_Upd_Time = 2;
+    private static final int Order_Price = 3;
+    private static final int Order_Exec_Vol = 4;
+    private static final int Order_Vol = 5;
+    private static final int Sec_Code = 6;
+    private static final int Trade_Dir = 7;
 
     private static final String FILTER_KEY1 = "D";
     private static final String FILTER_KEY2 = "X";
@@ -44,6 +53,10 @@ public class StockExchangeSimuV3 {
         // do call auction
         // 1. sort buy order and sell order by price and timestamp
         System.out.println("Start call auction");
+
+        // this is used for load pool test, currently it is alright
+        allStockFlush();
+        loadPool();
 
         // 2. do stock exchange on every stock id
         for (Map.Entry poolBentry : poolB.entrySet()) {
@@ -94,6 +107,8 @@ public class StockExchangeSimuV3 {
 
         Order curOrder = new Order(orderArr);
         String stockId = curOrder.getSecCode();
+
+        metricsDump();
 
         // delete stock order, index still needs to be deleted
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1)) {
@@ -183,12 +198,11 @@ public class StockExchangeSimuV3 {
         oneStockFlush(curSellPool, stockId, "S");
 //        }
 
-        System.out.println("stockid: " + stockId + " flushing time: " + (System.nanoTime() - start));
+//        System.out.println("stockid: " + stockId + " flushing time: " + (System.nanoTime() - start));
         return matchedResult;
     }
 
     public void deleteOrder(Order order, String direction) {
-        deleteOrderFromPool(order, direction);
         deleteOrderFromState(order, direction);
     }
 
@@ -232,22 +246,60 @@ public class StockExchangeSimuV3 {
     }
 
     public void deleteOrderFromState(Order curOrder, String direction) {
+//        String orderNo = curOrder.getOrderNo();
+//        String stockId = curOrder.getSecCode();
+//
+//        Order targetOrder = null;
+//
+//        // get the state pair that contains the order
+//        ArrayList<Order> orderList = getState(curOrder.getSecCode(), direction);
+//        for (Order order : orderList) {
+//            if (order.getOrderNo().equals(orderNo)) {
+//                targetOrder = order;
+//                break;
+//            }
+//        }
+//        orderList.remove(targetOrder);
+//        // put the orderList back
+//        putState(stockId, orderList, direction);
+        if (direction.equals("")) {
+            System.out.println("no order to delete!");
+        }
+
         String orderNo = curOrder.getOrderNo();
         String stockId = curOrder.getSecCode();
+        int orderPrice = curOrder.getOrderPrice();
 
         Order targetOrder = null;
 
-        // get the state pair that contains the order
-        ArrayList<Order> orderList = getState(curOrder.getSecCode(), direction);
-        for (Order order : orderList) {
-            if (order.getOrderNo().equals(orderNo)) {
-                targetOrder = order;
-                break;
+        if (direction.equals("S")) {
+            HashMap<Integer, ArrayList<Order>> curSellPool = poolS.getOrDefault(stockId, new HashMap<>());
+            ArrayList<Order> curSellOrders = curSellPool.getOrDefault(orderPrice, new ArrayList<>());
+            for (Order order : curSellOrders) {
+                if (order.getOrderNo().equals(orderNo)) {
+                    targetOrder = order;
+                    break;
+                }
             }
+            curSellOrders.remove(targetOrder);
+            updatePool(curSellPool, curSellOrders, curOrder.getOrderPrice());
+            poolS.replace(curOrder.getSecCode(), curSellPool);
+            oneStockFlush(curSellPool, stockId, direction);
         }
-        orderList.remove(targetOrder);
-        // put the orderList back
-        putState(stockId, orderList, direction);
+        if (direction.equals("B")) {
+            HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
+            ArrayList<Order> curBuyOrders = curBuyPool.getOrDefault(orderPrice, new ArrayList<>());
+            for (Order order : curBuyOrders) {
+                if (order.getOrderNo().equals(curOrder.getOrderNo())) {
+                    targetOrder = order;
+                    break;
+                }
+            }
+            curBuyOrders.remove(targetOrder);
+            updatePool(curBuyPool, curBuyOrders, curOrder.getOrderPrice());
+            poolB.replace(curOrder.getSecCode(), curBuyPool);
+            oneStockFlush(curBuyPool, stockId, direction);
+        }
     }
 
     public void updatePool(HashMap<Integer, ArrayList<Order>> curPool, ArrayList<Order> orderList, int key) {
@@ -269,14 +321,14 @@ public class StockExchangeSimuV3 {
             // need to keep pool price be sorted, so insert it into pool price
             curOrderList.add(curOrder);
             curPool.put(curOrderPrice, curOrderList);
-            poolB.put(curOrder.getSecCode(), curPool);
+            poolB.put(curSecCode, curPool);
         } else {
             HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(curSecCode, new HashMap<>());
             ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
             // need to keep pool price be sorted, so insert it into pool price
             curOrderList.add(curOrder);
             curPool.put(curOrderPrice, curOrderList);
-            poolS.put(curOrder.getSecCode(), curPool);
+            poolS.put(curSecCode, curPool);
         }
     }
 
@@ -295,7 +347,7 @@ public class StockExchangeSimuV3 {
                     curSellOrder.updateOrder(sellVol);
                     tradedSellOrders.add(curSellOrder);
 //                    System.out.println("Traded Sell: " + sellVol +  " - " + curSellOrder.toString());
-//                    System.out.println("Half-Traded Buy: " + sellVol +  " - " + curBuyOrder.toString());
+//                    System.out.println("Half-Traded Buy: " + sellVo   l +  " - " + curBuyOrder.toString());
                 } else {
                     curBuyOrder.updateOrder(buyVol);
                     curSellOrder.updateOrder(buyVol);
@@ -326,6 +378,9 @@ public class StockExchangeSimuV3 {
         // load pool from state backend, then do matchmaking by use old logic
         Iterator buyIter = stockExchangeMapBuy.entrySet().iterator();
         Iterator sellIter = stockExchangeMapSell.entrySet().iterator();
+
+        poolS.clear();
+        poolB.clear();
 
         while (buyIter.hasNext()) {
             Map.Entry<String, String> entry = (Map.Entry<String, String>) buyIter.next();
@@ -461,7 +516,9 @@ public class StockExchangeSimuV3 {
 //        boolean continuousAuction = false;
         int continuousAuction = 92500;
 
-        while ((sCurrentLine = br.readLine()) != null) {
+        long start = System.currentTimeMillis();
+
+        while ((sCurrentLine = br.readLine()) != null && (System.currentTimeMillis() - start) < 300000) {
             if (sCurrentLine.equals("end")) {
                 continue;
             }
@@ -470,7 +527,7 @@ public class StockExchangeSimuV3 {
                 // start to do call auction
                 ses.callAuction();
             }
-            if (sCurrentLine.split("\\|").length < 10) {
+            if (sCurrentLine.split("\\|").length < 7) {
                 continue;
             }
             String[] orderArr = sCurrentLine.split("\\|");
