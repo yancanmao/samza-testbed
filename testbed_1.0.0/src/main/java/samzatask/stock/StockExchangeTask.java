@@ -141,14 +141,17 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String loadedBuyerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedBuyerOrderList = strToList(loadedBuyerOrderStateVal);
             for (Order curOrder : loadedBuyerOrderList) {
-                System.out.println(curOrder);
-                int curOrderPrice = curOrder.getOrderPrice();
-                HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(stockId, new HashMap<>());
-                ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
-                // need to keep pool price be sorted, so insert it into pool price
-                curOrderList.add(curOrder);
-                curPool.put(curOrderPrice, curOrderList);
-                poolB.put(curOrder.getSecCode(), curPool);
+                try {
+                    int curOrderPrice = curOrder.getOrderPrice();
+                    HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(stockId, new HashMap<>());
+                    ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+                    // need to keep pool price be sorted, so insert it into pool price
+                    curOrderList.add(curOrder);
+                    curPool.put(curOrderPrice, curOrderList);
+                    poolB.put(curOrder.getSecCode(), curPool);
+                } catch (Exception e) {
+                    System.out.println(curOrder);
+                }
             }
         }
 
@@ -158,14 +161,17 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String loadedSellerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedSellerOrderList = strToList(loadedSellerOrderStateVal);
             for (Order curOrder : loadedSellerOrderList) {
-                System.out.println(curOrder);
-                int curOrderPrice = curOrder.getOrderPrice();
-                HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(stockId, new HashMap<>());
-                ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
-                // need to keep pool price be sorted, so insert it into pool price
-                curOrderList.add(curOrder);
-                curPool.put(curOrderPrice, curOrderList);
-                poolS.put(curOrder.getSecCode(), curPool);
+                try {
+                    int curOrderPrice = curOrder.getOrderPrice();
+                    HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(stockId, new HashMap<>());
+                    ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
+                    // need to keep pool price be sorted, so insert it into pool price
+                    curOrderList.add(curOrder);
+                    curPool.put(curOrderPrice, curOrderList);
+                    poolS.put(curOrder.getSecCode(), curPool);
+                } catch (Exception e) {
+                    System.out.println(curOrder);
+                }
             }
         }
 
