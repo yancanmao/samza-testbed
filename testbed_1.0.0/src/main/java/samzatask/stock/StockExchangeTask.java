@@ -532,11 +532,21 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String stockId = (String) entry.getKey();
             HashMap<Integer, ArrayList<Order>> curPool = (HashMap<Integer, ArrayList<Order>>) entry.getValue();
             oneStockFlush(curPool, stockId, "S");
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         for (Map.Entry entry : poolB.entrySet()) {
             String stockId = (String) entry.getKey();
             HashMap<Integer, ArrayList<Order>> curPool = (HashMap<Integer, ArrayList<Order>>) entry.getValue();
             oneStockFlush(curPool, stockId, "B");
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
