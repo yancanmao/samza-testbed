@@ -65,9 +65,11 @@ public class utils {
 
     public static ArrayList<Order> strToList(String stateVal) {
         ArrayList<Order> orderList = new ArrayList<>();
-        ArrayList<String> orderStrList = new ArrayList<>(Arrays.asList(stateVal.split(",")));
-        for (String orderStr : orderStrList) {
-            orderList.add(new Order(orderStr.split("\\|")));
+        if (stateVal != null) {
+            ArrayList<String> orderStrList = new ArrayList<>(Arrays.asList(stateVal.split(",")));
+            for (String orderStr : orderStrList) {
+                orderList.add(new Order(orderStr.split("\\|")));
+            }
         }
         return orderList;
     }
