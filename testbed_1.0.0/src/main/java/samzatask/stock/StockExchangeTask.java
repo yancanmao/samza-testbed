@@ -139,6 +139,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String stockId = entry.getKey();
             String loadedBuyerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedBuyerOrderList = strToList(loadedBuyerOrderStateVal);
+            System.out.println(loadedBuyerOrderStateVal);
             for (Order curOrder : loadedBuyerOrderList) {
                 int curOrderPrice = curOrder.getOrderPrice();
                 HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(stockId, new HashMap<>());
@@ -155,6 +156,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String stockId = entry.getKey();
             String loadedSellerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedSellerOrderList = strToList(loadedSellerOrderStateVal);
+            System.out.println(loadedSellerOrderStateVal);
             for (Order curOrder : loadedSellerOrderList) {
                 int curOrderPrice = curOrder.getOrderPrice();
                 HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(stockId, new HashMap<>());
