@@ -566,6 +566,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     public void putState(String stockId, ArrayList<Order> orderList, String direction) {
         String stateVal = listToStr(orderList);
 
+        System.out.println("state length appened: " + stateVal.length());
+
         if (direction.equals("S")) {
             stockExchangeMapSell.put(stockId, stateVal);
         } else {
