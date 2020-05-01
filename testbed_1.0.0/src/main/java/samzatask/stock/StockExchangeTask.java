@@ -140,8 +140,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String stockId = entry.getKey();
             String loadedBuyerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedBuyerOrderList = strToList(loadedBuyerOrderStateVal);
-            System.out.println(loadedBuyerOrderStateVal);
             for (Order curOrder : loadedBuyerOrderList) {
+                System.out.println(curOrder);
                 int curOrderPrice = curOrder.getOrderPrice();
                 HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(stockId, new HashMap<>());
                 ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
@@ -157,8 +157,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             String stockId = entry.getKey();
             String loadedSellerOrderStateVal = entry.getValue();
             ArrayList<Order> loadedSellerOrderList = strToList(loadedSellerOrderStateVal);
-            System.out.println(loadedSellerOrderStateVal);
             for (Order curOrder : loadedSellerOrderList) {
+                System.out.println(curOrder);
                 int curOrderPrice = curOrder.getOrderPrice();
                 HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(stockId, new HashMap<>());
                 ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
@@ -319,7 +319,6 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     }
 
     public void deleteOrder(Order order, String direction) {
-        deleteOrderFromPool(order, direction);
         deleteOrderFromState(order, direction);
     }
 
@@ -363,22 +362,60 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     }
 
     public void deleteOrderFromState(Order curOrder, String direction) {
+//        String orderNo = curOrder.getOrderNo();
+//        String stockId = curOrder.getSecCode();
+//
+//        Order targetOrder = null;
+//
+//        // get the state pair that contains the order
+//        ArrayList<Order> orderList = getState(curOrder.getSecCode(), direction);
+//        for (Order order : orderList) {
+//            if (order.getOrderNo().equals(orderNo)) {
+//                targetOrder = order;
+//                break;
+//            }
+//        }
+//        orderList.remove(targetOrder);
+//        // put the orderList back
+//        putState(stockId, orderList, direction);
+        if (direction.equals("")) {
+            System.out.println("no order to delete!");
+        }
+
         String orderNo = curOrder.getOrderNo();
         String stockId = curOrder.getSecCode();
+        int orderPrice = curOrder.getOrderPrice();
 
         Order targetOrder = null;
 
-        // get the state pair that contains the order
-        ArrayList<Order> orderList = getState(curOrder.getSecCode(), direction);
-        for (Order order : orderList) {
-            if (order.getOrderNo().equals(orderNo)) {
-                targetOrder = order;
-                break;
+        if (direction.equals("S")) {
+            HashMap<Integer, ArrayList<Order>> curSellPool = poolS.getOrDefault(stockId, new HashMap<>());
+            ArrayList<Order> curSellOrders = curSellPool.getOrDefault(orderPrice, new ArrayList<>());
+            for (Order order : curSellOrders) {
+                if (order.getOrderNo().equals(orderNo)) {
+                    targetOrder = order;
+                    break;
+                }
             }
+            curSellOrders.remove(targetOrder);
+            updatePool(curSellPool, curSellOrders, curOrder.getOrderPrice());
+            poolS.replace(curOrder.getSecCode(), curSellPool);
+            oneStockFlush(curSellPool, stockId, direction);
         }
-        orderList.remove(targetOrder);
-        // put the orderList back
-        putState(stockId, orderList, direction);
+        if (direction.equals("B")) {
+            HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
+            ArrayList<Order> curBuyOrders = curBuyPool.getOrDefault(orderPrice, new ArrayList<>());
+            for (Order order : curBuyOrders) {
+                if (order.getOrderNo().equals(curOrder.getOrderNo())) {
+                    targetOrder = order;
+                    break;
+                }
+            }
+            curBuyOrders.remove(targetOrder);
+            updatePool(curBuyPool, curBuyOrders, curOrder.getOrderPrice());
+            poolB.replace(curOrder.getSecCode(), curBuyPool);
+            oneStockFlush(curBuyPool, stockId, direction);
+        }
     }
 
     public void updatePool(HashMap<Integer, ArrayList<Order>> curPool, ArrayList<Order> orderList, int key) {
