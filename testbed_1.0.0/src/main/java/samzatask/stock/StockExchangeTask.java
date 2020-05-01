@@ -131,6 +131,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
     public void loadPool() {
         // load pool from state backend, then do matchmaking by use old logic
+        System.out.println("load pool from state backend");
         KeyValueIterator<String, String> buyIter = stockExchangeMapBuy.all();
         KeyValueIterator<String, String> sellIter = stockExchangeMapSell.all();
 
@@ -167,6 +168,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 poolS.put(curOrder.getSecCode(), curPool);
             }
         }
+
+        System.out.println("load success: poolB size" + poolB.size() + " poolS size: " + poolS.size());
     }
 
 
