@@ -16,11 +16,12 @@ class Order {
      */
     private static final int Order_No = 0;
     private static final int Tran_Maint_Code = 1;
-    private static final int Order_Price = 8;
-    private static final int Order_Exec_Vol = 9;
-    private static final int Order_Vol = 10;
-    private static final int Sec_Code = 11;
-    private static final int Trade_Dir = 22;
+    private static final int Last_Upd_Time = 2;
+    private static final int Order_Price = 3;
+    private static final int Order_Exec_Vol = 4;
+    private static final int Order_Vol = 5;
+    private static final int Sec_Code = 6;
+    private static final int Trade_Dir = 7;
 
     private String[] orderArr;
 
