@@ -110,7 +110,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 //                } else if (orderArr[Trade_Dir].equals("B")) {
 //                    stockExchangeMapBuy.delete(orderArr[Order_No]);
 //                }
-                deleteOrderFromPool(curOrder, orderArr[Trade_Dir]);
+                deleteOrderFromPool(curOrder, orderArr[Sec_Code], orderArr[Trade_Dir]);
             } else {
 //                if (orderArr[Trade_Dir].equals("S")) {
 //                    stockExchangeMapSell.put(orderArr[Order_No], stockOrder);
@@ -119,7 +119,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 //                } else {
 //                    System.out.println("++++ error direction");
 //                }
-                insertPool(curOrder);
+                insertPool(curOrder, orderArr[Sec_Code], orderArr[Trade_Dir]);
             }
         } else {
             delay(config.getInt("job.delay.time.ms", DefaultDelay));
@@ -148,7 +148,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                     // need to keep pool price be sorted, so insert it into pool price
                     curOrderList.add(curOrder);
                     curPool.put(curOrderPrice, curOrderList);
-                    poolB.put(curOrder.getSecCode(), curPool);
+                    poolB.put(stockId, curPool);
                 } catch (Exception e) {
                     System.out.println(curOrder);
                 }
@@ -168,7 +168,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                     // need to keep pool price be sorted, so insert it into pool price
                     curOrderList.add(curOrder);
                     curPool.put(curOrderPrice, curOrderList);
-                    poolS.put(curOrder.getSecCode(), curPool);
+                    poolS.put(stockId, curPool);
                 } catch (Exception e) {
                     System.out.println(curOrder);
                 }
@@ -232,12 +232,15 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     public Map<String, String> continuousStockExchange(String[] orderArr, String direction) {
         Map<String, String> matchedResult = new HashMap<>();
 
+        String stockId = orderArr[Sec_Code];
+
         Order curOrder = new Order(orderArr);
-        String stockId = curOrder.getSecCode();
+
+//        metricsDump();
 
         // delete stock order, index still needs to be deleted
         if (orderArr[Tran_Maint_Code].equals(FILTER_KEY1)) {
-            deleteOrder(curOrder, direction);
+            deleteOrder(curOrder, stockId, direction);
             return matchedResult;
         }
 
@@ -315,27 +318,29 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             poolS.replace(stockId, curSellPool);
         }
 
+//        System.out.println("stockid: " + stockId + " actual processing time: " + (System.nanoTime() - start));
         long start = System.nanoTime();
 
+//        if (isMatched) {
         oneStockFlush(curBuyPool, stockId, "B");
         oneStockFlush(curSellPool, stockId, "S");
+//        }
 
-        System.out.println("stockid: " + stockId + " flushing time: " + (System.nanoTime() - start));
+//        System.out.println("stockid: " + stockId + " flushing time: " + (System.nanoTime() - start));
         return matchedResult;
     }
 
-    public void deleteOrder(Order order, String direction) {
-        deleteOrderFromState(order, direction);
+    public void deleteOrder(Order order, String stockId, String direction) {
+        deleteOrderFromState(order, stockId, direction);
     }
 
-    public void deleteOrderFromPool(Order curOrder, String direction) {
+    public void deleteOrderFromPool(Order curOrder, String stockId, String direction) {
         if (direction.equals("")) {
             System.out.println("no order to delete!");
         }
 
-        String orderNo = curOrder.getOrderNo();
-        String stockId = curOrder.getSecCode();
         int orderPrice = curOrder.getOrderPrice();
+        String orderNo = curOrder.getOrderNo();
 
         Order targetOrder = null;
 
@@ -349,8 +354,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 }
             }
             curSellOrders.remove(targetOrder);
-            updatePool(curSellPool, curSellOrders, curOrder.getOrderPrice());
-            poolS.replace(curOrder.getSecCode(),curSellPool);
+            updatePool(curSellPool, curSellOrders, orderPrice);
+            poolS.replace(stockId, curSellPool);
         }
         if (direction.equals("B")) {
             HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
@@ -362,12 +367,12 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 }
             }
             curBuyOrders.remove(targetOrder);
-            updatePool(curBuyPool, curBuyOrders, curOrder.getOrderPrice());
-            poolB.replace(curOrder.getSecCode(),curBuyPool);
+            updatePool(curBuyPool, curBuyOrders, orderPrice);
+            poolB.replace(stockId,curBuyPool);
         }
     }
 
-    public void deleteOrderFromState(Order curOrder, String direction) {
+    public void deleteOrderFromState(Order curOrder, String stockId, String direction) {
 //        String orderNo = curOrder.getOrderNo();
 //        String stockId = curOrder.getSecCode();
 //
@@ -389,7 +394,6 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
 
         String orderNo = curOrder.getOrderNo();
-        String stockId = curOrder.getSecCode();
         int orderPrice = curOrder.getOrderPrice();
 
         Order targetOrder = null;
@@ -405,7 +409,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             }
             curSellOrders.remove(targetOrder);
             updatePool(curSellPool, curSellOrders, curOrder.getOrderPrice());
-            poolS.replace(curOrder.getSecCode(), curSellPool);
+            poolS.replace(stockId, curSellPool);
             oneStockFlush(curSellPool, stockId, direction);
         }
         if (direction.equals("B")) {
@@ -419,7 +423,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             }
             curBuyOrders.remove(targetOrder);
             updatePool(curBuyPool, curBuyOrders, curOrder.getOrderPrice());
-            poolB.replace(curOrder.getSecCode(), curBuyPool);
+            poolB.replace(stockId, curBuyPool);
             oneStockFlush(curBuyPool, stockId, direction);
         }
     }
@@ -432,25 +436,23 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
     }
 
-    public void insertPool(Order curOrder) {
-        String curSecCode = curOrder.getSecCode();
+    public void insertPool(Order curOrder, String stockId, String direction) {
         int curOrderPrice = curOrder.getOrderPrice();
-        String direction = curOrder.getTradeDir();
 
         if (direction.equals("B")) {
-            HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(curSecCode, new HashMap<>());
+            HashMap<Integer, ArrayList<Order>> curPool = poolB.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
             // need to keep pool price be sorted, so insert it into pool price
             curOrderList.add(curOrder);
             curPool.put(curOrderPrice, curOrderList);
-            poolB.put(curOrder.getSecCode(), curPool);
+            poolB.put(stockId, curPool);
         } else {
-            HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(curSecCode, new HashMap<>());
+            HashMap<Integer, ArrayList<Order>> curPool = poolS.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curOrderList = curPool.getOrDefault(curOrderPrice, new ArrayList<>());
             // need to keep pool price be sorted, so insert it into pool price
             curOrderList.add(curOrder);
             curPool.put(curOrderPrice, curOrderList);
-            poolS.put(curOrder.getSecCode(), curPool);
+            poolS.put(stockId, curPool);
         }
     }
 

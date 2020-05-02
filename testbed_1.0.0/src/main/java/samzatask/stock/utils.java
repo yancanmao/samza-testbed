@@ -68,7 +68,8 @@ public class utils {
         if (stateVal != null) {
             ArrayList<String> orderStrList = new ArrayList<>(Arrays.asList(stateVal.split(",")));
             for (String orderStr : orderStrList) {
-                orderList.add(new Order(orderStr.split("\\|")));
+                String[] orderArr = orderStr.split("\\|");
+                orderList.add(new Order(orderArr[0], orderArr[1], orderArr[2]));
             }
         }
         return orderList;
