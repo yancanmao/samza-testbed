@@ -234,6 +234,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     }
 
     public Map<String, String> continuousStockExchange(String[] orderArr, String direction) {
+        long start = System.nanoTime();
+
         Map<String, String> matchedResult = new HashMap<>();
 
         String stockId = orderArr[Sec_Code];
@@ -323,14 +325,13 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
 
 //        System.out.println("stockid: " + stockId + " actual processing time: " + (System.nanoTime() - start));
-        long start = System.nanoTime();
 
 //        if (isMatched) {
         oneStockFlush(curBuyPool, stockId, "B");
         oneStockFlush(curSellPool, stockId, "S");
 //        }
 
-//        System.out.println("stockid: " + stockId + " flushing time: " + (System.nanoTime() - start));
+        System.out.println("stockid: " + stockId + " processing time: " + (System.nanoTime() - start));
         return matchedResult;
     }
 
