@@ -258,7 +258,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         HashMap<Integer, ArrayList<Order>> curBuyPool;
         HashMap<Integer, ArrayList<Order>> curSellPool;
 
-        int isMatched = 0;
+//        int isMatched = 0;
 
         if (direction.equals("B")) {
             int curBuyPrice = curOrder.getOrderPrice();
@@ -326,11 +326,9 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
 //        System.out.println("stockid: " + stockId + " actual processing time: " + (System.nanoTime() - start));
 
-        isMatched++;
-        if (isMatched % 10000 == 0) {
-            oneStockFlush(curBuyPool, stockId, "B");
-            oneStockFlush(curSellPool, stockId, "S");
-        }
+//        isMatched++;
+        oneStockFlush(curBuyPool, stockId, "B");
+        oneStockFlush(curSellPool, stockId, "S");
 
         System.out.println("stockid: " + stockId + " processing time: " + (System.nanoTime() - start));
         return matchedResult;
