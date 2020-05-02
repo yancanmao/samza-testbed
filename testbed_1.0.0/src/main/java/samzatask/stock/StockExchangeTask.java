@@ -130,8 +130,9 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     }
 
     public void loadPool() {
+        long start = System.currentTimeMillis();
         // load pool from state backend, then do matchmaking by use old logic
-        System.out.println("load pool from state backend");
+        System.out.println("load pool from state backend, time: ");
         KeyValueIterator<String, String> buyIter = stockExchangeMapBuy.all();
         KeyValueIterator<String, String> sellIter = stockExchangeMapSell.all();
 
@@ -175,7 +176,8 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             }
         }
 
-        System.out.println("load success: poolB size" + poolB.size() + " poolS size: " + poolS.size());
+        System.out.println("load success: poolB size" + poolB.size() + " poolS size: " + poolS.size()
+                + " time to load pool: " + (System.currentTimeMillis() - start));
     }
 
 
