@@ -1,11 +1,13 @@
 package samzatask.stock;
 
+import java.io.Serializable;
+
 /**
  * Author by Mao
  * kmeans data structure, and some operator
  */
 
-class Order {
+class Order implements Serializable {
     /**
      * The user that viewed the page
      */
@@ -22,40 +24,40 @@ class Order {
     private static final int Mapped_Order_Price = 1;
     private static final int Mapped_Order_Vol = 2;
 
-    private String[] orderArr;
+//    private String[] orderArr;
+    private String orderNo;
+    private int orderPrice;
+    private int orderVol;
 
     Order(String[] orderArr) {
-        this.orderArr = new String[]{orderArr[Order_No], orderArr[Order_Price], orderArr[Order_Vol]};
+        orderNo = orderArr[Order_No];
+        Float price = Float.parseFloat(orderArr[Order_Price]) * 100;
+        orderPrice = price.intValue();
+        Float interOrderVol = Float.parseFloat(orderArr[Order_Vol]);
+        orderVol = interOrderVol.intValue();
     }
 
     Order(String orderNo, String orderPrice, String orderVol) {
-        this.orderArr = new String[]{orderNo, orderPrice, orderVol};
+        this.orderNo = orderNo;
+        Float price = Float.parseFloat(orderPrice) * 100;
+        this.orderPrice = price.intValue();
+        Float interOrderVol = Float.parseFloat(orderVol);
+        this.orderVol = interOrderVol.intValue();
     }
 
     String getOrderNo() {
-        return orderArr[Mapped_Order_No];
+        return orderNo;
     }
 
     int getOrderPrice() {
-        Float price = Float.parseFloat(orderArr[Mapped_Order_Price]) * 100000;
-        return price.intValue();
+        return orderPrice;
     }
     int getOrderVol() {
-        Float interOrderVol = Float.parseFloat(orderArr[Mapped_Order_Vol]);
-        return interOrderVol.intValue();
-    }
-
-    public String getKey(int key) {
-        return orderArr[key];
-    }
-
-    @Override
-    public String toString() {
-        return String.join("|", orderArr);
+        return orderVol;
     }
 
     void updateOrder(int otherOrderVol) {
-        orderArr[Mapped_Order_Vol] = (this.getOrderVol() - otherOrderVol) + "";
+        orderVol = (this.getOrderVol() - otherOrderVol);
     }
 }
 
