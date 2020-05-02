@@ -25,12 +25,12 @@ class Order implements Serializable {
     private static final int Mapped_Order_Vol = 2;
 
 //    private String[] orderArr;
-    private String orderNo;
+    private int orderNo;
     private int orderPrice;
     private int orderVol;
 
     Order(String[] orderArr) {
-        orderNo = orderArr[Order_No];
+        orderNo = orderArr[Order_No].hashCode();
         Float price = Float.parseFloat(orderArr[Order_Price]) * 100;
         orderPrice = price.intValue();
         Float interOrderVol = Float.parseFloat(orderArr[Order_Vol]);
@@ -38,14 +38,14 @@ class Order implements Serializable {
     }
 
     Order(String orderNo, String orderPrice, String orderVol) {
-        this.orderNo = orderNo;
+        this.orderNo = orderNo.hashCode();
         Float price = Float.parseFloat(orderPrice) * 100;
         this.orderPrice = price.intValue();
         Float interOrderVol = Float.parseFloat(orderVol);
         this.orderVol = interOrderVol.intValue();
     }
 
-    String getOrderNo() {
+    int getOrderNo() {
         return orderNo;
     }
 

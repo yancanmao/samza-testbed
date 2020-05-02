@@ -258,7 +258,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         HashMap<Integer, ArrayList<Order>> curBuyPool;
         HashMap<Integer, ArrayList<Order>> curSellPool;
 
-        boolean isMatched = false;
+        int isMatched = 0;
 
         if (direction.equals("B")) {
             int curBuyPrice = curOrder.getOrderPrice();
@@ -280,7 +280,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 int curSellPrice = (int) curSellOrdersEntry.getKey();
                 // when matched, do transaction
                 if (curBuyPrice >= curSellPrice) {
-                    isMatched = true;
+//                    isMatched = true;
                     ArrayList<Order> curSellOrders = (ArrayList<Order>) curSellOrdersEntry.getValue();
                     stockExchange(curBuyOrders, curSellOrders);
                     // add pending orders into pool again for future usage
@@ -309,7 +309,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 int curBuyPrice = (int) curBuyOrdersEntry.getKey();
                 // when matched, do transaction
                 if (curBuyPrice >= curSellPrice) {
-                    isMatched = true;
+//                    isMatched = true;
                     ArrayList<Order> curBuyOrders = (ArrayList<Order>) curBuyOrdersEntry.getValue();
                     stockExchange(curBuyOrders, curSellOrders);
                     // add pending orders into pool again for future usage
@@ -326,10 +326,11 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
 //        System.out.println("stockid: " + stockId + " actual processing time: " + (System.nanoTime() - start));
 
-//        if (isMatched) {
-        oneStockFlush(curBuyPool, stockId, "B");
-        oneStockFlush(curSellPool, stockId, "S");
-//        }
+        isMatched++;
+        if (isMatched % 10000 == 0) {
+            oneStockFlush(curBuyPool, stockId, "B");
+            oneStockFlush(curSellPool, stockId, "S");
+        }
 
         System.out.println("stockid: " + stockId + " processing time: " + (System.nanoTime() - start));
         return matchedResult;
@@ -345,7 +346,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
         }
 
         int orderPrice = curOrder.getOrderPrice();
-        String orderNo = curOrder.getOrderNo();
+        int orderNo = curOrder.getOrderNo();
 
         Order targetOrder = null;
 
@@ -353,7 +354,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             HashMap<Integer, ArrayList<Order>> curSellPool = poolS.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curSellOrders = curSellPool.getOrDefault(orderPrice, new ArrayList<>());
             for (Order order : curSellOrders) {
-                if (order.getOrderNo().equals(orderNo)) {
+                if (order.getOrderNo() == orderNo) {
                     targetOrder = order;
                     break;
                 }
@@ -366,7 +367,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curBuyOrders = curBuyPool.getOrDefault(orderPrice, new ArrayList<>());
             for (Order order : curBuyOrders) {
-                if (order.getOrderNo().equals(curOrder.getOrderNo())) {
+                if (order.getOrderNo() == orderNo) {
                     targetOrder = order;
                     break;
                 }
@@ -398,7 +399,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             System.out.println("no order to delete!");
         }
 
-        String orderNo = curOrder.getOrderNo();
+        int orderNo = curOrder.getOrderNo();
         int orderPrice = curOrder.getOrderPrice();
 
         Order targetOrder = null;
@@ -407,7 +408,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             HashMap<Integer, ArrayList<Order>> curSellPool = poolS.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curSellOrders = curSellPool.getOrDefault(orderPrice, new ArrayList<>());
             for (Order order : curSellOrders) {
-                if (order.getOrderNo().equals(orderNo)) {
+                if (order.getOrderNo() == orderNo) {
                     targetOrder = order;
                     break;
                 }
@@ -421,7 +422,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
             HashMap<Integer, ArrayList<Order>> curBuyPool = poolB.getOrDefault(stockId, new HashMap<>());
             ArrayList<Order> curBuyOrders = curBuyPool.getOrDefault(orderPrice, new ArrayList<>());
             for (Order order : curBuyOrders) {
-                if (order.getOrderNo().equals(curOrder.getOrderNo())) {
+                if (order.getOrderNo() == orderNo) {
                     targetOrder = order;
                     break;
                 }
