@@ -17,12 +17,13 @@ import samzaapps.Nexmark.serde.Auction;
 import samzaapps.Nexmark.serde.Bid;
 import samzaapps.Nexmark.serde.Person;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
 
-public class Query5 implements StreamApplication {
+public class Query5 implements StreamApplication, Serializable {
 
     private static final String KAFKA_SYSTEM_NAME = "kafka";
     private static final List<String> KAFKA_CONSUMER_ZK_CONNECT = ImmutableList.of("localhost:2181");
