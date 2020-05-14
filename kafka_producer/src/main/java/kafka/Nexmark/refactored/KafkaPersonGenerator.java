@@ -4,6 +4,7 @@ import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;
 import org.apache.beam.sdk.nexmark.sources.generator.model.AuctionGenerator;
 import org.apache.beam.sdk.nexmark.sources.generator.model.BidGenerator;
+import org.apache.beam.sdk.nexmark.sources.generator.model.PersonGenerator;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -14,23 +15,22 @@ import java.util.Random;
 /**
  * SSE generaor
  */
-public class KafkaBidGenerator {
+public class KafkaPersonGenerator {
 
     private String TOPIC;
 
     private static KafkaProducer<Long, String> producer;
 
     private volatile boolean running = true;
-    private final GeneratorConfig config;
+    private final GeneratorConfig config = new GeneratorConfig(NexmarkConfiguration.DEFAULT, 1, 1000L, 0, 1);
     private long eventsCountSoFar = 0;
     private int rate;
     private int cycle;
-    private int base;
 
-    public KafkaBidGenerator(String input, String BROKERS, int rate, int cycle, int base) {
+    public KafkaPersonGenerator(String input, String BROKERS, int rate, int cycle) {
         Properties props = new Properties();
         props.put("bootstrap.servers", BROKERS);
-        props.put("client.id", "Bid");
+        props.put("client.id", "Person");
         props.put("batch.size", "163840");
         props.put("linger.ms", "10");
         props.put("key.serializer", "org.apache.kafka.common.serialization.LongSerializer");
@@ -40,15 +40,6 @@ public class KafkaBidGenerator {
         TOPIC = input;
         this.rate = rate;
         this.cycle = cycle;
-        this.base = base;
-        NexmarkConfiguration nexconfig = NexmarkConfiguration.DEFAULT;
-        nexconfig.hotBiddersRatio=1;
-        nexconfig.hotAuctionRatio=1;
-        nexconfig.hotSellersRatio=1;
-        nexconfig.numInFlightAuctions=1;
-        nexconfig.numEventGenerators=1;
-        nexconfig.avgPersonByteSize=100;
-        config = new GeneratorConfig(nexconfig, 1, 1000L, 0, 1);
     }
 
     public void generate() throws InterruptedException {
@@ -57,31 +48,24 @@ public class KafkaBidGenerator {
         int tupleCounter = 0;
 
         long emitStartTime = 0;
-
-        int curRate = rate + base;
-
-        System.out.println("++++++enter warm up");
-        warmup();
-        System.out.println("++++++end warm up");
-        long start = System.currentTimeMillis();
+        int curRate = rate;
 
         while (running) {
 
             emitStartTime = System.currentTimeMillis();
 
-            if (emitStartTime >= start + (epoch + 1) * 1000) {
+            if (count == 20) {
                 // change input rate every 1 second.
-                //epoch++;
-                epoch = (int)((emitStartTime - start)/1000);
-                curRate = base + changeRate(epoch);
-                System.out.println("bid epoch: " + epoch%cycle + " current rate is: " + curRate);
-                System.out.println("bid epoch: " + epoch + " actual current rate is: " + tupleCounter);
+                epoch++;
+                System.out.println();
+                curRate = changeRate(epoch);
+                System.out.println("epoch: " + epoch%cycle + " current rate is: " + curRate);
+                System.out.println("epoch: " + epoch + " actual current rate is: " + tupleCounter);
                 tupleCounter = 0;
                 count = 0;
             }
 
             for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
-
                 long nextId = nextId();
                 Random rnd = new Random(nextId);
 
@@ -90,10 +74,10 @@ public class KafkaBidGenerator {
                         config.timestampAndInterEventDelayUsForEvent(
                                 config.nextEventNumber(eventsCountSoFar)).getKey();
 
-//                ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, null, System.currentTimeMillis(), nextId,
-//                        BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
+//                ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, null , System.currentTimeMillis(), nextId,
+//                        PersonGenerator.nextPerson(nextId, rnd, eventTimestamp, config).toString());
                 ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, nextId,
-                        BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
+                        PersonGenerator.nextPerson(nextId, rnd, eventTimestamp, config).toString());
                 producer.send(newRecord);
                 tupleCounter++;
                 eventsCountSoFar++;
@@ -107,38 +91,6 @@ public class KafkaBidGenerator {
             count++;
         }
         producer.close();
-    }
-
-    private void warmup() throws InterruptedException {
-        long emitStartTime = 0;
-        long warmupStart = System.currentTimeMillis();
-        int curRate = rate + base;
-        while (System.currentTimeMillis()-warmupStart < 120000) {
-            emitStartTime = System.currentTimeMillis();
-            for (int i = 0; i < Integer.valueOf(curRate/20); i++) {
-
-                long nextId = nextId();
-                Random rnd = new Random(nextId);
-
-                // When, in event time, we should generate the event. Monotonic.
-                long eventTimestamp =
-                        config.timestampAndInterEventDelayUsForEvent(
-                                config.nextEventNumber(eventsCountSoFar)).getKey();
-
-//                ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, null, System.currentTimeMillis(), nextId,
-//                        BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
-                ProducerRecord<Long, String> newRecord = new ProducerRecord<Long, String>(TOPIC, nextId,
-                        BidGenerator.nextBid(nextId, rnd, eventTimestamp, config).toString());
-                producer.send(newRecord);
-                eventsCountSoFar++;
-            }
-
-            // Sleep for the rest of timeslice if needed
-            long emitTime = System.currentTimeMillis() - emitStartTime;
-            if (emitTime < 1000/20) {
-                Thread.sleep(1000/20 - emitTime);
-            }
-        }
     }
 
     private long nextId() {
@@ -157,12 +109,11 @@ public class KafkaBidGenerator {
         final ParameterTool params = ParameterTool.fromArgs(args);
 
         String BROKERS = params.get("host", "localhost:9092");
-        String TOPIC = params.get("topic", "bids");
+        String TOPIC = params.get("topic", "persons");
         int rate = params.getInt("rate", 1000);
         int cycle = params.getInt("cycle", 360);
-        int base = params.getInt("base", 0);
 
-        new KafkaBidGenerator(TOPIC, BROKERS, rate, cycle, base).generate();
+        new KafkaPersonGenerator(TOPIC, BROKERS, rate, cycle).generate();
     }
 }
 
