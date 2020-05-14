@@ -4,6 +4,11 @@ APP_DIR="$(dirname $(pwd))"
 IS_COMPILE=$1
 HOST=$2
 APP=$3
+INPUT_CYCLE=$4
+INPUT_BASE=$5
+INPUT_RATE=$6
+
+
 
 function clearEnv() {
 #    ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic auctions
@@ -19,16 +24,12 @@ function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
+    python -c 'import time; time.sleep(5)'
     rm -r /tmp/kafka-logs/
     rm -r /tmp/zookeeper/
-
-    python -c 'import time; time.sleep(10)'
-
     ~/samza-hello-samza/bin/grid start zookeeper
     ~/samza-hello-samza/bin/grid start kafka
-    
-
-    python -c 'import time; time.sleep(10)'
+    python -c 'import time; time.sleep(5)'
 
     ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic auctions --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
     ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic bids --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
@@ -133,11 +134,11 @@ python -c 'import time; time.sleep(100)'
 
 BROKER=${HOST}:9092
 #The rate here will become [BASE * 2, RATE * 4 + BASE * 2]
-CYCLE=150
+CYCLE=$INPUT_CYCLE
 #RATE=3000
 #BASE=3000
-RATE=5000
-BASE=10000
+RATE=$INPUT_RATE
+BASE=$INPUT_BASE
 
 if [[ ${APP} == 1 ]]
 then
