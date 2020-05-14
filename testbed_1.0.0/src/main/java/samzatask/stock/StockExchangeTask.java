@@ -190,10 +190,10 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     }
 
     private void updateStore(
-                             Map<String, String> pendingBuy,
-                             Map<String, String> pendingSell,
-                             Map<String, String> matchedBuy,
-                             Map<String, String> matchedSell) {
+            Map<String, String> pendingBuy,
+            Map<String, String> pendingSell,
+            Map<String, String> matchedBuy,
+            Map<String, String> matchedSell) {
         for (Map.Entry<String, String> order : pendingBuy.entrySet()) {
             stockExchangeMapBuy.put(order.getKey(), order.getValue());
         }
