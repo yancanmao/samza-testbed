@@ -147,7 +147,7 @@ EXP_NAME=B${BASE}C${CYCLE}R${RATE}_APP${appid}
 localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
 figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
 mkdir ${figDir}
-bash ${APP_DIR}/nexmark_scripts/runCpr.sh ${appid} ${localDir}
+bash ${APP_DIR}/nexmark_scripts/runScpr.sh ${appid} ${localDir}
 
 cd ${APP_DIR}/nexmark_scripts/draw
 python2 RateAndWindowDelay.py ${EXP_NAME}
