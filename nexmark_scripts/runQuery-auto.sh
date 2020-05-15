@@ -13,6 +13,7 @@ function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
+    kill -9 $(jps | grep Kafka | awk '{print $1}')
     python -c 'import time; time.sleep(5)'
     rm -r /tmp/kafka-logs/
     rm -r /tmp/zookeeper/
