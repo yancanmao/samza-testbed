@@ -42,8 +42,8 @@ function compile() {
 }
 
 function uploadHDFS() {
-    ~/cluster/yarn/bin/hdfs dfs -rm  hdfs://${HOST}:9000/testbed-myc/*-dist.tar.gz
-    ~/cluster/yarn/bin/hdfs dfs -mkdir hdfs://${HOST}:9000/testbed-myc
+    ~/cluster/yarn/bin/hdfs dfs -rm  hdfs://${HOST}:9000/testbed-nexmark/*-dist.tar.gz
+    ~/cluster/yarn/bin/hdfs dfs -mkdir hdfs://${HOST}:9000/testbed-nexmark
     ~/cluster/yarn/bin/hdfs dfs -put  ${APP_DIR}/testbed_1.0.0/target/*-dist.tar.gz hdfs://${HOST}:9000/testbed-nexmark
 }
 
