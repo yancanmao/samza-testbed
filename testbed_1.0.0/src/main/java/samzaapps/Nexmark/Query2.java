@@ -18,11 +18,12 @@ import samzaapps.Nexmark.serde.Auction;
 import samzaapps.Nexmark.serde.Bid;
 import samzaapps.Nexmark.serde.Person;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 
-public class Query2 implements StreamApplication {
+public class Query2 implements StreamApplication, Serializable {
 
     private static final String KAFKA_SYSTEM_NAME = "kafka";
     private static final List<String> KAFKA_CONSUMER_ZK_CONNECT = ImmutableList.of("localhost:2181");
@@ -61,12 +62,14 @@ public class Query2 implements StreamApplication {
 
         bids
                 .filter(bid -> {
-                    if (bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
-                            || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0) {
-                        return true;
-                    } else {
-                        return false;
+                    int sum = 0;
+                    long start = System.nanoTime();
+                    for (int i=0; i< 1*10E4; i++) {
+                        sum *= i;
                     }
+                    System.out.println("sum: " + sum + " time: " + (System.nanoTime() - start));
+                    return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
+                            || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0;
                 })
                 .map(bid -> KV.of(String.valueOf(bid.getAuction()), String.valueOf(bid.getPrice())))
                 .sendTo(results);

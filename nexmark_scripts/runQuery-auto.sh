@@ -9,18 +9,7 @@ INPUT_BASE=$5
 INPUT_RATE=$6
 
 
-
 function clearEnv() {
-#    ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic auctions
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic persons
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic nexmark-q8-1-join-join-R
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic nexmark-q8-1-join-join-L
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic nexmark-q8-1-partition_by-auction
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic nexmark-q8-1-partition_by-person
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic __samza_coordinator_nexmark-q8_1
-    #~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --delete --zookeeper ${HOST}:2181 --topic results
-    #python -c 'import time; time.sleep(60)'
-
     export JAVA_HOME=/home/samza/kit/jdk
     ~/samza-hello-samza/bin/grid stop kafka
     ~/samza-hello-samza/bin/grid stop zookeeper
@@ -31,23 +20,11 @@ function clearEnv() {
     ~/samza-hello-samza/bin/grid start kafka
     python -c 'import time; time.sleep(5)'
 
-    ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic auctions --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
     ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic bids --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
-    ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic persons --partitions 64 --replication-factor 1 --config message.timestamp.type=LogAppendTime
 }
 
 function configApp() {
-#    echo $nOE $L $T $l;
-#    #Modify applicaiton config
-#    cp ~/workspace/samza-related/samza-testbed/testbed_1.0.0/src/main/config/stock-exchange-ss-dragon.properties properties.t1
-#    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$nOE"'}1' properties.t1 > properties.t2
-#    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.requirement.window"{$2='"$((T*1000))"'}1' properties.t2 > properties.t1
-#    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.system.l="{$2='"$l"'}1' properties.t1 > properties.t2
-#    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.requirement.latency"{$2='"$((L*1000))"'}1' properties.t2 > properties.t1
-#    rm properties.t2
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
-#    awk -F"=" 'BEGIN{OFS=FS} $1=="job.id"{$2=$2+1}1' ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties > properties.tmp
-#    mv properties.tmp ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
 }
 
 function configAppStatic() {
@@ -67,7 +44,7 @@ function compile() {
 function uploadHDFS() {
     ~/cluster/yarn/bin/hdfs dfs -rm  hdfs://${HOST}:9000/testbed-myc/*-dist.tar.gz
     ~/cluster/yarn/bin/hdfs dfs -mkdir hdfs://${HOST}:9000/testbed-myc
-    ~/cluster/yarn/bin/hdfs dfs -put  ${APP_DIR}/testbed_1.0.0/target/*-dist.tar.gz hdfs://${HOST}:9000/testbed-myc
+    ~/cluster/yarn/bin/hdfs dfs -put  ${APP_DIR}/testbed_1.0.0/target/*-dist.tar.gz hdfs://${HOST}:9000/testbed-nexmark
 }
 
 function compileGenerator() {
@@ -141,6 +118,9 @@ RATE=$INPUT_RATE
 BASE=$INPUT_BASE
 
 if [[ ${APP} == 1 ]]
+then
+    generateBid
+elif [[ ${APP} == 2 ]]
 then
     generateBid
 elif [[ ${APP} == 5 ]]
