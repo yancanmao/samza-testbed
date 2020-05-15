@@ -1,4 +1,4 @@
-package kafka.Nexmark;
+package kafka.Nexmark.refactored;
 
 import org.apache.beam.sdk.nexmark.NexmarkConfiguration;
 import org.apache.beam.sdk.nexmark.sources.generator.GeneratorConfig;

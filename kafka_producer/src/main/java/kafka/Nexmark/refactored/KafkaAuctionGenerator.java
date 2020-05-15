@@ -1,4 +1,4 @@
-package kafka.Nexmark;
+package kafka.Nexmark.refactored;
 
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.kafka.clients.producer.KafkaProducer;
