@@ -67,7 +67,9 @@ public class Query2 implements StreamApplication, Serializable {
                     for (int i=0; i< 1*10E4; i++) {
                         sum *= i;
                     }
-                    System.out.println("sum: " + sum + " time: " + (System.nanoTime() - start));
+                    if (sum == 10) {
+                        System.out.println("sum: " + sum + " time: " + (System.nanoTime() - start));
+                    }
                     return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
                             || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0;
                 })
