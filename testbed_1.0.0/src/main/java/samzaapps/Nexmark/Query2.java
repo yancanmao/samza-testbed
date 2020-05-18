@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.apache.samza.application.StreamApplication;
 import org.apache.samza.application.descriptors.StreamApplicationDescriptor;
+import org.apache.samza.config.Config;
 import org.apache.samza.operators.KV;
 import org.apache.samza.operators.MessageStream;
 import org.apache.samza.operators.OutputStream;
@@ -19,6 +20,8 @@ import samzaapps.Nexmark.serde.Bid;
 import samzaapps.Nexmark.serde.Person;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
@@ -33,8 +36,13 @@ public class Query2 implements StreamApplication, Serializable {
     private static final String BID_STREAM = "bids";
     private static final String OUTPUT_STREAM_ID = "results";
 
+    private Config config;
+    private static final int DefaultDelay = 200000;
+
     @Override
     public void describe(StreamApplicationDescriptor appDescriptor) {
+        config = appDescriptor.getConfig();
+
         Serde serde = KVSerde.of(new StringSerde(), new StringSerde());
 
         StringSerde stringSerde = new StringSerde();
@@ -62,18 +70,35 @@ public class Query2 implements StreamApplication, Serializable {
 
         bids
                 .filter(bid -> {
-                    int sum = 0;
-                    long start = System.nanoTime();
-                    for (int i=0; i< 1*10E4; i++) {
-                        sum *= i;
-                    }
-                    if (sum == 10) {
-                        System.out.println("sum: " + sum + " time: " + (System.nanoTime() - start));
+                    // different host, have different delay
+                    String hostname = getHost();
+                    if (hostname.equals("eagle-sane")) {
+                        // eagle 50%
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), 0.5);
+                    } else {
+                        // flamingo 100%
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), 1.0);
                     }
                     return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
                             || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0;
                 })
                 .map(bid -> KV.of(String.valueOf(bid.getAuction()), String.valueOf(bid.getPrice())))
                 .sendTo(results);
+    }
+
+    private void delay(int interval, double limit) {
+        int actInt = (int) (interval/limit);
+        long start = System.nanoTime();
+        while (System.nanoTime() - start < actInt) {}
+    }
+
+    private String getHost() {
+        String hostname = null;
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return hostname;
     }
 }
