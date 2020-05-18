@@ -75,10 +75,10 @@ public class Query2 implements StreamApplication, Serializable {
                     String hostname = getHost();
                     if (hostname.equals("eagle-sane")) {
                         // eagle 50%
-                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit", DefaultLimit));
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit.eagle", DefaultLimit));
                     } else {
                         // flamingo 100%
-                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit", DefaultLimit));
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit.flamingo", DefaultLimit));
                     }
                     return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
                             || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0;
