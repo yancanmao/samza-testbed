@@ -38,6 +38,7 @@ public class Query2 implements StreamApplication, Serializable {
 
     private Config config;
     private static final int DefaultDelay = 200000;
+    private static final double DefaultLimit = 1.0;
 
     @Override
     public void describe(StreamApplicationDescriptor appDescriptor) {
@@ -74,10 +75,10 @@ public class Query2 implements StreamApplication, Serializable {
                     String hostname = getHost();
                     if (hostname.equals("eagle-sane")) {
                         // eagle 50%
-                        delay(config.getInt("job.delay.time.ms", DefaultDelay), 0.5);
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit", DefaultLimit));
                     } else {
                         // flamingo 100%
-                        delay(config.getInt("job.delay.time.ms", DefaultDelay), 1.0);
+                        delay(config.getInt("job.delay.time.ms", DefaultDelay), config.getDouble("job.delay.limit", DefaultLimit));
                     }
                     return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0
                             || bid.getAuction() % 2001 == 0 || bid.getAuction() % 2019 == 0 || bid.getAuction() % 2087 == 0;
