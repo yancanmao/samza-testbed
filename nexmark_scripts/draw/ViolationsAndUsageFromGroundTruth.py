@@ -42,6 +42,7 @@ restoreStartPoints = {}
 shutdownStartPoints = {}
 endPoints = {}
 lastGT = {}
+locality = {}
 for fileName in listdir(inputDir):
     if(fileName <> '000001.txt' and fileName.startswith('000')):
         inputFile = inputDir + fileName
@@ -77,6 +78,8 @@ for fileName in listdir(inputDir):
                     substreamLatencies[pid][ttime][0] += int(split[5])
                     substreamLatencies[pid][ttime][1] += long(split[7])
                     lastGT[fileName] = ttime
+                if(split[0] == 'container' and split[1] == 'start' and split[2] == 'at'):
+                    locality[fileName] = split[3]
                 if(split[0] == 'Starting' and split[1] == 'run'):
                     restoreStartPoint += [long(split[3])]
                 if(split[0] == 'Entering'):
@@ -110,6 +113,7 @@ restoreTimeRange = [10000000000L, 0]
 totalMigrationTime = 0
 numberOfMigration = 0
 migrationTimeRange = [10000000000000L, 0]
+hostLiveTime = {}
 for fileName in restoreStartPoints.keys():
     print(fileName)
     # live time
@@ -127,6 +131,16 @@ for fileName in restoreStartPoints.keys():
         if(endTime > xaxes[1] * 1000):
             endTime = xaxes[1] * 1000
         #print(fileName, beginTime, endTime, lastGT[fileName], startTime)
+
+        # per host live time
+        if(fileName in locality):
+            host = locality[fileName]
+            if(host not in hostLiveTime):
+                hostLiveTime[host] = 0
+            print(host,beginTime, endTime)
+            if(endTime > beginTime):
+                hostLiveTime[host] += endTime - beginTime
+
         if(endTime > beginTime):
             totalLiveTime += endTime - beginTime
         #migrationTime
@@ -367,12 +381,18 @@ print(substreamSuccessRate)
 if(numberOfMigration == 0):
     numberOfMigration = 1
     totalMigrationTime = 0
+print(totalLiveTime)
 print("Total live time: %.5f , total migration time: %.3f ,  ratio: %.5f , avg: %.5f range: %s\n" % (totalLiveTime/1000.0 ,  totalMigrationTime/1000.0, totalMigrationTime/float(totalLiveTime), totalMigrationTime/float(numberOfMigration), str(migrationTimeRange)))
+
+#per host live time
+print(hostLiveTime)
+
 ret += [totalLiveTime/1000.0 , totalMigrationTime/1000.0, totalMigrationTime/float(totalLiveTime), totalMigrationTime/1000.0/float(numberOfMigration), migrationTimeRange[0]/1000.0, migrationTimeRange[1]/1000.0]
 ret.append(substreamSuccessRate)
+ret.append(hostLiveTime)
 # Calculate avg latency
 with open(txtOutputFile, 'a') as f:
-    f.write("%.15f\t%.3f\t%.3f\t%.15f\t%.3f\t%.3f\t%.3f\n%s\n\n" % (ret[0], ret[1], ret[2], ret[3], ret[4], ret[5], ret[6], ret[7]))
+    f.write("%.15f\t%.3f\t%.3f\t%.15f\t%.3f\t%.3f\t%.3f\n%s\n%s\n\n" % (ret[0], ret[1], ret[2], ret[3], ret[4], ret[5], ret[6], ret[7], ret[8]))
 
 if(False):
     print("Calculate avg lantecy")

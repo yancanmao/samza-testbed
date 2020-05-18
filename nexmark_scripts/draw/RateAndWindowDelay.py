@@ -7,7 +7,7 @@ input_file = '/home/samza/GroundTruth/nexmark_result/' + jobname + "/000001.txt"
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
 xaxes = [0000, 755]
-deltaT = 1000
+deltaT = 100
 startline = [[155, 155], [0, 10000000]]
 executorsFigureFlag = True
 
@@ -498,7 +498,7 @@ for i in range(0, len(numberOfSevereT)):
 plt.legend(legend, loc='upper left')
 plt.grid(True)
 axes = plt.gca()
-maxOEs = 20
+maxOEs = 32
 axes.set_yticks(np.arange(0, maxOEs))
 axes.set_xlim(xaxes)
 axes.set_ylim([0,maxOEs + 1])

@@ -1,7 +1,7 @@
 #!/bin/bash
-AVGRATE=35000
-for cycle in 200 300; do
-        for range in 20000; do
+AVGRATE=30000
+for cycle in 300 ; do
+        for range in 0; do
             for times in 1; do
 		base=`expr ${AVGRATE} - ${range}`
                 echo $cycle $base $range

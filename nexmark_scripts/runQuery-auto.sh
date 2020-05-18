@@ -11,17 +11,17 @@ INPUT_RATE=$6
 
 function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
-    ~/samza-hello-samza/bin/grid stop kafka
-    ~/samza-hello-samza/bin/grid stop zookeeper
+    /home/samza/samza-hello-samza/bin/grid stop kafka
+    /home/samza/samza-hello-samza/bin/grid stop zookeeper
     kill -9 $(jps | grep Kafka | awk '{print $1}')
     python -c 'import time; time.sleep(5)'
     rm -r /tmp/kafka-logs/
     rm -r /tmp/zookeeper/
-    ~/samza-hello-samza/bin/grid start zookeeper
-    ~/samza-hello-samza/bin/grid start kafka
+    /home/samza/samza-hello-samza/bin/grid start zookeeper
+    /home/samza/samza-hello-samza/bin/grid start kafka
     python -c 'import time; time.sleep(5)'
 
-    ~/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic bids --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
+    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic bids --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
 }
 
 function configApp() {
@@ -43,9 +43,9 @@ function compile() {
 }
 
 function uploadHDFS() {
-    ~/cluster/yarn/bin/hdfs dfs -rm  hdfs://${HOST}:9000/testbed-nexmark/*-dist.tar.gz
-    ~/cluster/yarn/bin/hdfs dfs -mkdir hdfs://${HOST}:9000/testbed-nexmark
-    ~/cluster/yarn/bin/hdfs dfs -put  ${APP_DIR}/testbed_1.0.0/target/*-dist.tar.gz hdfs://${HOST}:9000/testbed-nexmark
+    /yarn/bin/hdfs dfs -rm  hdfs://${HOST}:9000/testbed-nexmark/*-dist.tar.gz
+    /yarn/bin/hdfs dfs -mkdir hdfs://${HOST}:9000/testbed-nexmark
+    /yarn/bin/hdfs dfs -put  ${APP_DIR}/testbed_1.0.0/target/*-dist.tar.gz hdfs://${HOST}:9000/testbed-nexmark
 }
 
 function compileGenerator() {
@@ -86,7 +86,7 @@ function runAppStatic() {
 }
 
 function killApp() {
-    ~/cluster/yarn/bin/yarn application -kill $app
+    /yarn/bin/yarn application -kill $app
 }
 
 function killGenerator() {

@@ -10,7 +10,7 @@ runCmd()
     for i in $(seq 1 $end); do
         for HOST in eagle flamingo; do
             container=$(printf %06d $i)
-            path=${HOST}":/yarn/logs/userlogs/application_${appid}/container_${appid}_01_${container}/stdout"
+            path=${HOST}":/yarn/logs/userlogs/application_${appid}/container_e*_${appid}_01_${container}/stdout"
             scp ${path} "${localPath}/${container}.txt"
         done
     done
