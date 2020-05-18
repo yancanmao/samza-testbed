@@ -7,7 +7,8 @@ APP=$3
 INPUT_CYCLE=$4
 INPUT_BASE=$5
 INPUT_RATE=$6
-
+# heterogeneous
+limit=$7
 
 function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
@@ -26,6 +27,7 @@ function clearEnv() {
 
 function configApp() {
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
+    awk -F"=" 'BEGIN{OFS=FS} $1=="job.delay.limit.eagle"{$2='"$limit"'}1' properties.t1 > properties.t2
 }
 
 function configAppStatic() {
@@ -118,6 +120,7 @@ CYCLE=$INPUT_CYCLE
 RATE=$INPUT_RATE
 BASE=$INPUT_BASE
 
+
 if [[ ${APP} == 1 ]]
 then
     generateBid
@@ -142,7 +145,7 @@ killApp
 killGenerator
 
 
-EXP_NAME=B${BASE}C${CYCLE}R${RATE}_APP${appid}
+EXP_NAME=B${BASE}C${CYCLE}R${RATE}_H${limit}_APP${appid}
 
 localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
 figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
