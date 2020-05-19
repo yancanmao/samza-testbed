@@ -35,6 +35,7 @@ function configApp() {
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.delay"{$2='"$delayBad"'}1' properties.t2 > properties.t1
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.good.ratio"{$2='"$ratioGood"'}1' properties.t1 > properties.t2
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.ratio"{$2='"$ratioBad"'}1' properties.t2 > properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$N"'}1' properties.t2 > properties.t1
     rm properties.t2
     mv properties.t1 ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
 }
@@ -116,6 +117,8 @@ delayBad=480000
 ratioGood=1
 ratioBad=0
 
+N=12
+
 for delayGood in 720000 480000 120000 80000; do #1/3, 1/2, 2, 3
     clearEnv
     configApp
@@ -159,7 +162,7 @@ for delayGood in 720000 480000 120000 80000; do #1/3, 1/2, 2, 3
     killGenerator
 
 
-    EXP_NAME=B${BASE}C${CYCLE}R${RATE}_H${limit}_APP${appid}
+    EXP_NAME=B${BASE}C${CYCLE}R${RATE}_N${N}_D${delayGood}_APP${appid}
 
     localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
     figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
