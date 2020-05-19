@@ -8,7 +8,10 @@ INPUT_CYCLE=$4
 INPUT_BASE=$5
 INPUT_RATE=$6
 # heterogeneous
-limit=$7
+#delayGood=$7
+#delayBad=$8
+#ratioGood=$9
+#ratioBad=$10
 
 function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
@@ -27,7 +30,13 @@ function clearEnv() {
 
 function configApp() {
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
-    awk -F"=" 'BEGIN{OFS=FS} $1=="job.delay.limit.eagle"{$2='"$limit"'}1' properties.t1 > properties.t2
+    cp ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="task.good.delay"{$2='"$delayGood"'}1' properties.t1 > properties.t2
+    awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.delay"{$2='"$delayBad"'}1' properties.t2 > properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="task.good.ratio"{$2='"$ratioGood"'}1' properties.t1 > properties.t2
+    awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.ratio"{$2='"$ratioBad"'}1' properties.t2 > properties.t1
+    rm properties.t2
+    mv properties.t1 ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
 }
 
 function configAppStatic() {
@@ -102,56 +111,62 @@ then
     uploadHDFS
 fi
 
+delayGood=240000
+delayBad=480000
+ratioGood=1
+ratioBad=0
 
-clearEnv
-configApp
-runApp
-#configAppStatic
-#runAppStatic
+for delayGood in 720000 480000 120000 80000; do #1/3, 1/2, 2, 3
+    clearEnv
+    configApp
+    runApp
+    #configAppStatic
+    #runAppStatic
 
-# wait for app start
-python -c 'import time; time.sleep(100)'
+    # wait for app start
+    python -c 'import time; time.sleep(100)'
 
-BROKER=${HOST}:9092
-#The rate here will become [BASE * 2, RATE * 4 + BASE * 2]
-CYCLE=$INPUT_CYCLE
-#RATE=3000
-#BASE=3000
-RATE=$INPUT_RATE
-BASE=$INPUT_BASE
-
-
-if [[ ${APP} == 1 ]]
-then
-    generateBid
-elif [[ ${APP} == 2 ]]
-then
-    generateBid
-elif [[ ${APP} == 5 ]]
-then
-    generateBid
-elif [[ ${APP} == 8 ]]
-then
-    generateAuction
-    generatePerson
-    #echo "Generate"
-fi
-
-python -c 'import time; time.sleep(780)'
-
-# run 120s
-#python -c 'import time; time.sleep(500)'
-killApp
-killGenerator
+    BROKER=${HOST}:9092
+    #The rate here will become [BASE * 2, RATE * 4 + BASE * 2]
+    CYCLE=$INPUT_CYCLE
+    #RATE=3000
+    #BASE=3000
+    RATE=$INPUT_RATE
+    BASE=$INPUT_BASE
 
 
-EXP_NAME=B${BASE}C${CYCLE}R${RATE}_H${limit}_APP${appid}
+    if [[ ${APP} == 1 ]]
+    then
+        generateBid
+    elif [[ ${APP} == 2 ]]
+    then
+        generateBid
+    elif [[ ${APP} == 5 ]]
+    then
+        generateBid
+    elif [[ ${APP} == 8 ]]
+    then
+        generateAuction
+        generatePerson
+        #echo "Generate"
+    fi
 
-localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
-figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
-mkdir ${figDir}
-bash ${APP_DIR}/nexmark_scripts/runScpr.sh ${appid} ${localDir}
+    python -c 'import time; time.sleep(780)'
 
-cd ${APP_DIR}/nexmark_scripts/draw
-python2 RateAndWindowDelay.py ${EXP_NAME}
-python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
+    # run 120s
+    #python -c 'import time; time.sleep(500)'
+    killApp
+    killGenerator
+
+
+    EXP_NAME=B${BASE}C${CYCLE}R${RATE}_H${limit}_APP${appid}
+
+    localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
+    figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
+    mkdir ${figDir}
+    bash ${APP_DIR}/nexmark_scripts/runScpr.sh ${appid} ${localDir}
+
+    cd ${APP_DIR}/nexmark_scripts/draw
+    python2 RateAndWindowDelay.py ${EXP_NAME}
+    python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
+done
