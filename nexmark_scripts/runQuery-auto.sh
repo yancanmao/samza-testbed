@@ -119,7 +119,7 @@ ratioBad=0
 
 N=12
 
-for delayGood in 720000 480000 120000 80000; do #1/3, 1/2, 2, 3
+for delayGood in 720000 470000 230000 112000 75000; do #1/3, 1/2, 2, 3 #720000, 480000, 230000, 115000, 75000
     clearEnv
     configApp
     runApp
