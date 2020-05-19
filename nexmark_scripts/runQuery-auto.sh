@@ -35,9 +35,9 @@ function configApp() {
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.delay"{$2='"$delayBad"'}1' properties.t2 > properties.t1
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.good.ratio"{$2='"$ratioGood"'}1' properties.t1 > properties.t2
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.ratio"{$2='"$ratioBad"'}1' properties.t2 > properties.t1
-    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$N"'}1' properties.t2 > properties.t1
-    rm properties.t2
-    mv properties.t1 ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
+    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$N"'}1' properties.t1 > properties.t2
+    rm properties.t1
+    mv properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
 }
 
 function configAppStatic() {
