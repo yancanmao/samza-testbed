@@ -14,9 +14,9 @@ from os import listdir
 #figureName = '1h_32_L1T10A0.3333333'
 figureName = sys.argv[1]
 #figureName = 'B7500C120R5000_APP1587972038474_0034'
-inputDir = '/home/samza/GroundTruth/nexmark_result/' + figureName + '/'
+inputDir = '/home/samza/GroundTruth/wordcount_result/' + figureName + '/'
 outputDir = 'figures/' + figureName + '/'
-txtOutputFile = 'nexmarkSuccessRate.txt'
+txtOutputFile = 'wordcountSuccessRate.txt'
 keyAverageLatencyFlag = False
 keyAverageLatencyThreshold = 0.2
 keyLatencyIntervalFlag = False

@@ -3,7 +3,7 @@
 import sys
 
 jobname = sys.argv[1]
-input_file = '/home/samza/GroundTruth/nexmark_result/' + jobname + "/000001.txt"
+input_file = '/home/samza/GroundTruth/wordcount_result/' + jobname + "/000001.txt"
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
 xaxes = [0000, 755]
@@ -585,7 +585,7 @@ plt.title('Overall Window Delay')
 plt.grid(True)
 plt.savefig(output_path + jobname + '_WorstWindowDelay.png')
 plt.close(fig)
-txtOutputFile = 'nexmarkSuccessRate.txt'
+txtOutputFile = 'wordcountSuccessRate.txt'
 with open(txtOutputFile, 'a') as f:
     f.write("%s\n%.3f\t%d\t%d\t%d\n" % (jobname, ret[0], ret[1], ret[2], ret[3]))
 

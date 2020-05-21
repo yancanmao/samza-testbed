@@ -14,7 +14,7 @@ function clearEnv() {
     /home/samza/samza-hello-samza/bin/grid stop zookeeper
     kill -9 $(jps | grep Kafka | awk '{print $1}')
     python -c 'import time; time.sleep(5)'
-    rm -r /tmp/kafka-logs/
+    rm -r /data/kafka/kafka-logs/
     rm -r /tmp/zookeeper/
     /home/samza/samza-hello-samza/bin/grid start zookeeper
     /home/samza/samza-hello-samza/bin/grid start kafka
@@ -126,7 +126,7 @@ EXP_NAME=B${BASE}C${CYCLE}R${RATE}_Counter_APP${counterappid}
 localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME}"
 figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME}"
 mkdir ${figDir}
-bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${splitterappid} ${localDir}
+bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${counterappid} ${localDir}
 
 cd ${APP_DIR}/wordcount_scripts/draw
 python2 RateAndWindowDelay.py ${EXP_NAME}

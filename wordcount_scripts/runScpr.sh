@@ -8,10 +8,10 @@ runCmd()
     end=80
     mkdir -p ${localPath}
     for i in $(seq 1 $end); do
-        for HOST in dragon; do
+        for HOST in camel; do
             container=$(printf %06d $i)
             path=${HOST}":~/cluster/yarn/logs/userlogs/application_${appid}/container*_${appid}_01_${container}/stdout"
-            cp ${path} "${localPath}/${container}.txt"
+            scp ${path} "${localPath}/${container}.txt"
         done
     done
     return 0

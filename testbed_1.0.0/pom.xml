@@ -170,7 +170,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--<samza.version>1.0.0</samza.version>-->
 <!--        <samza.version>1.0.0-inst</samza.version>-->
-        <samza.version>1.0.0-StreamSwitch-inst</samza.version>
+        <samza.version>1.0.0-StreamSwitch-myc</samza.version>
 <!--        <samza.version>1.0.0-StreamSwitch-inst</samza.version>-->
         <hadoop.version>2.6.1</hadoop.version>
     </properties>
