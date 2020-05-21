@@ -8,7 +8,7 @@ runCmd()
     end=80
     mkdir -p ${localPath}
     for i in $(seq 1 $end); do
-        for HOST in eagle flamingo; do
+        for HOST in dragon; do
             container=$(printf %06d $i)
             path=${HOST}":~/cluster/yarn/logs/userlogs/application_${appid}/container*_${appid}_01_${container}/stdout"
             scp ${path} "${localPath}/${container}.txt"

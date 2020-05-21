@@ -31,7 +31,7 @@ public class SentenceGenerator {
     private int base = 0;
     private int warmUpInterval = 100000;
 
-    public SentenceGenerator(String input, String BROKERS, int rate, int cycle) {
+    public SentenceGenerator(String input, String BROKERS, int rate, int cycle, int base) {
         Properties props = new Properties();
         props.put("bootstrap.servers", BROKERS);
         props.put("client.id", "ProducerExample");
@@ -41,6 +41,7 @@ public class SentenceGenerator {
         TOPIC = input;
         this.rate = rate;
         this.cycle = cycle;
+        this.base = base;
 
         producer = new KafkaProducer<>(props);
     }
@@ -60,6 +61,7 @@ public class SentenceGenerator {
             if (System.currentTimeMillis() - startTs < warmUpInterval) {
                 for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
                     ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, generator.nextSentence(sentenceSize));
+                    System.out.println("+++");
                     producer.send(newRecord);
                 }
                 // Sleep for the rest of timeslice if needed
@@ -101,8 +103,9 @@ public class SentenceGenerator {
         String TOPIC = params.get("topic", "sentences");
         int rate = params.getInt("rate", 1000);
         int cycle = params.getInt("cycle", 360);
+        int base = params.getInt("base", 0);
 
-        new SentenceGenerator(TOPIC, BROKERS, rate, cycle).generate();
+        new SentenceGenerator(TOPIC, BROKERS, rate, cycle, base).generate();
     }
 }
 
