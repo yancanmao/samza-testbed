@@ -24,8 +24,8 @@ function clearEnv() {
 }
 
 function configApp() {
-    sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter.properties
-    sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter.properties
+    sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties
+    sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties
 }
 
 function compile() {
@@ -55,14 +55,14 @@ function generate() {
 
 function runApp() {
     OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
-    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter.properties | grep 'application_.*$'`
+    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties | grep 'application_.*$'`
     splitterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
     splitterappid=${splitterapp#application_}
     echo "assigned app id is: $splitterappid"
 
 
    OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
-    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter.properties | grep 'application_.*$'`
+    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties | grep 'application_.*$'`
     counterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
     counterappid=${counterapp#application_}
     echo "assigned app id is: $counterappid"
@@ -109,23 +109,23 @@ killGenerator
 
 EXP_NAME=B${BASE}C${CYCLE}R${RATE}_Splitter_APP${splitterappid}
 
-localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
-figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
+localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME}"
+figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME}"
 mkdir ${figDir}
-bash ${APP_DIR}/nexmark_scripts/runScpr.sh ${splitterappid} ${localDir}
+bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${splitterappid} ${localDir}
 
-cd ${APP_DIR}/nexmark_scripts/draw
+cd ${APP_DIR}/wordcount_scripts/draw
 python2 RateAndWindowDelay.py ${EXP_NAME}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
 
 
 EXP_NAME=B${BASE}C${CYCLE}R${RATE}_Counter_APP${counterappid}
 
-localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
-figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"
+localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME}"
+figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME}"
 mkdir ${figDir}
-bash ${APP_DIR}/nexmark_scripts/runScpr.sh ${splitterappid} ${localDir}
+bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${splitterappid} ${localDir}
 
-cd ${APP_DIR}/nexmark_scripts/draw
+cd ${APP_DIR}/wordcount_scripts/draw
 python2 RateAndWindowDelay.py ${EXP_NAME}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
