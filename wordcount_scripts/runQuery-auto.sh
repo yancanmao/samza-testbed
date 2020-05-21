@@ -48,9 +48,9 @@ function compileGenerator() {
     cd ${APP_DIR}
 }
 
-function generatePerson() {
+function generate() {
     java -cp ${APP_DIR}/kafka_producer/target/kafka_producer-0.0.1-jar-with-dependencies.jar kafka.WordCount.SentenceGenerator \
-        -host $BROKER -topic persons -rate $RATE -cycle $CYCLE -base $BASE &
+        -host $BROKER -topic sentences -rate $RATE -cycle $CYCLE -base $BASE &
 }
 
 function runApp() {
@@ -90,6 +90,8 @@ runApp
 
 # wait for app start
 python -c 'import time; time.sleep(100)'
+
+generate
 
 BROKER=${HOST}:9092
 #The rate here will become [BASE * 2, RATE * 4 + BASE * 2]
