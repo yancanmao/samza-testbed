@@ -28,6 +28,7 @@ public class WordCountCounterTask implements StreamTask, InitableTask, Serializa
     @Override
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String word = (String) envelope.getMessage();
+        delay();
         if (this.wordcounts.get(word) == null) {
             this.wordcounts.put(word, 0);
         }
@@ -35,5 +36,10 @@ public class WordCountCounterTask implements StreamTask, InitableTask, Serializa
         curCount++;
         this.wordcounts.put(word, curCount);
         collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, word, String.valueOf(curCount)));
+    }
+
+    private void delay() {
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < 40000) {}
     }
 }

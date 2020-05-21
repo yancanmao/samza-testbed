@@ -15,7 +15,13 @@ public class WordCountSplitterTask implements StreamTask, Serializable {
     @Override
     public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
         String sentence = (String) envelope.getMessage();
+        delay();
         String[] tokens = sentence.toLowerCase().split("\\W+");
         for (String token : tokens) collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, token, token));
+    }
+
+    private void delay() {
+        Long start = System.nanoTime();
+        while (System.nanoTime() - start < 400000) {}
     }
 }
