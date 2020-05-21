@@ -21,6 +21,7 @@ function clearEnv() {
     python -c 'import time; time.sleep(5)'
 
     /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic sentences --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
+    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic words --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
 }
 
 function configApp() {
