@@ -11,7 +11,7 @@ runCmd()
         for HOST in dragon; do
             container=$(printf %06d $i)
             path=${HOST}":~/cluster/yarn/logs/userlogs/application_${appid}/container*_${appid}_01_${container}/stdout"
-            scp ${path} "${localPath}/${container}.txt"
+            cp ${path} "${localPath}/${container}.txt"
         done
     done
     return 0

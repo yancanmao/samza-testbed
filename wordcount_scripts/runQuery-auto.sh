@@ -91,13 +91,14 @@ runApp
 # wait for app start
 python -c 'import time; time.sleep(100)'
 
-generate
 
 BROKER=${HOST}:9092
 #The rate here will become [BASE * 2, RATE * 4 + BASE * 2]
 CYCLE=${INPUT_CYCLE}
 RATE=${INPUT_RATE}
 BASE=${INPUT_BASE}
+
+generate
 
 python -c 'import time; time.sleep(780)'
 
