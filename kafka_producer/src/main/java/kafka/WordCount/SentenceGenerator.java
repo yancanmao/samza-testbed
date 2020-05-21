@@ -61,7 +61,6 @@ public class SentenceGenerator {
             if (System.currentTimeMillis() - startTs < warmUpInterval) {
                 for (int i = 0; i < Integer.valueOf(curRate / 20); i++) {
                     ProducerRecord<String, String> newRecord = new ProducerRecord<>(TOPIC, generator.nextSentence(sentenceSize));
-                    System.out.println("+++");
                     producer.send(newRecord);
                 }
                 // Sleep for the rest of timeslice if needed
