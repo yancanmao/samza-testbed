@@ -62,11 +62,11 @@ function runApp() {
     echo "assigned app id is: $splitterappid"
 
 
-   OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
-    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties | grep 'application_.*$'`
-    counterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
-    counterappid=${counterapp#application_}
-    echo "assigned app id is: $counterappid"
+#   OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
+#    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties | grep 'application_.*$'`
+#    counterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
+#    counterappid=${counterapp#application_}
+#    echo "assigned app id is: $counterappid"
 }
 
 function killApp() {
