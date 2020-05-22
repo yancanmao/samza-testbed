@@ -27,6 +27,16 @@ function clearEnv() {
 function configApp() {
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties
+
+    cp ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$Ns"'}1' properties.t1 > properties.t2
+    rm properties.t1
+    mv properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties
+
+    cp ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$Nc"'}1' properties.t1 > properties.t2
+    rm properties.t1
+    mv properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties
 }
 
 function compile() {
@@ -84,6 +94,9 @@ then
     compileGenerator
     uploadHDFS
 fi
+
+Ns=5
+Nc=10
 
 clearEnv
 configApp
