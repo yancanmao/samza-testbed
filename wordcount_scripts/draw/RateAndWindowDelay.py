@@ -320,7 +320,7 @@ if(executorsFigureFlag):
         legend = ['Arrival Rate', 'Processing Rate']
         plt.plot(containerArrivalRateT[Id], containerArrivalRate[Id],'r^', markersize=1)
         plt.plot(containerServiceRateT[Id],containerServiceRate[Id],'bs', markersize=1)
-        plt.plot(startline[0], startline[1], 'r')
+        plt.plot([x * 1000 /deltaT for x in startline[0]] , [x * 1000 /deltaT for x in startline[1]], 'r')
         lines = addMigrationLine(Id, 1000)
         for line in lines:
             plt.plot(line[0], line[1], linewidth=3.0, color=line[2])
@@ -332,6 +332,7 @@ if(executorsFigureFlag):
         axes.set_xlim([xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT])
         #axes.set_yscale('log')
         axes.set_ylim([0, 20000])
+        axes.set_yticks([0, 5000, 10000, 15000, 20000])
 #        axes.set_yticks([-10000, 0, 10000, 20000, 30000, 40000, 50000, 60000])
         #axes.set_yticks([1, 10, 100, 1000, 10000, 100000, 1000000])
         import matplotlib.ticker as ticker
@@ -428,7 +429,7 @@ if(executorsFigureFlag):
 
         plt.plot(containerWindowDelayT[Id], containerWindowDelay[Id],'bs', markersize=1)
         plt.plot(containerLongtermDelayT[Id], containerLongtermDelay[Id], 'cd', markersize=1)
-        plt.plot(startline[0], startline[1], 'r') 
+        plt.plot([x * 1000 /deltaT for x in startline[0]], [x * 1000 /deltaT for x in startline[0]], 'r') 
         lines = addMigrationLine(Id, 50000)
         for line in lines:
             plt.plot(line[0], line[1], linewidth=3.0, color=line[2])
@@ -498,10 +499,10 @@ for i in range(0, len(numberOfSevereT)):
 plt.legend(legend, loc='upper left')
 plt.grid(True)
 axes = plt.gca()
-maxOEs = 32
+maxOEs = 50
 axes.set_yticks(np.arange(0, maxOEs))
 axes.set_xlim(xaxes)
-axes.set_ylim([0,maxOEs + 1])
+axes.set_ylim([0, maxOEs + 1])
 plt.xlabel('Index (s)')
 plt.ylabel('# of Running OEs')
 plt.title('Number of OEs')

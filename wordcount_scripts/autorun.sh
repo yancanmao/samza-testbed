@@ -1,5 +1,5 @@
 #!/bin/bash
-AVGRATE=8000
+AVGRATE=16667
 for cycle in 300 ; do
         for range in 0; do
             for times in 1; do

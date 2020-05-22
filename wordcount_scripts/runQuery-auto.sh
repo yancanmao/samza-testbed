@@ -20,8 +20,8 @@ function clearEnv() {
     /home/samza/samza-hello-samza/bin/grid start kafka
     python -c 'import time; time.sleep(5)'
 
-    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic sentences --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
-    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic words --partitions 64 --replication-factor 1  --config message.timestamp.type=LogAppendTime
+    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic sentences --partitions 60 --replication-factor 1  --config message.timestamp.type=LogAppendTime
+    /home/samza/samza-hello-samza/deploy/kafka/bin/kafka-topics.sh --zookeeper ${HOST}:2181 --create --topic words --partitions 60 --replication-factor 1  --config message.timestamp.type=LogAppendTime
 }
 
 function configApp() {
@@ -62,11 +62,11 @@ function runApp() {
     echo "assigned app id is: $splitterappid"
 
 
-#   OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
-#    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties | grep 'application_.*$'`
-#    counterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
-#    counterappid=${counterapp#application_}
-#    echo "assigned app id is: $counterappid"
+   OUTPUT=`${APP_DIR}/testbed_1.0.0/target/bin/run-app.sh --config-factory=org.apache.samza.config.factories.PropertiesConfigFactory \
+    --config-path=file://${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties | grep 'application_.*$'`
+    counterapp=`[[ ${OUTPUT} =~ application_[0-9]*_[0-9]* ]] && echo $BASH_REMATCH`
+    counterappid=${counterapp#application_}
+    echo "assigned app id is: $counterappid"
 }
 
 function killApp() {
@@ -121,13 +121,16 @@ python2 RateAndWindowDelay.py ${EXP_NAME}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
 
 
-EXP_NAME=B${BASE}C${CYCLE}R${RATE}_Counter_APP${counterappid}
+EXP_NAME2=B${BASE}C${CYCLE}R${RATE}_Counter_APP${counterappid}
 
-localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME}"
-figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME}"
+localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME2}"
+figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME2}"
 mkdir ${figDir}
 bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${counterappid} ${localDir}
 
 cd ${APP_DIR}/wordcount_scripts/draw
-python2 RateAndWindowDelay.py ${EXP_NAME}
-python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
+python2 RateAndWindowDelay.py ${EXP_NAME2}
+python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME2}
+
+python2 WordCountViolation.py ${EXP_NAME} ${EXP_NAME2}
+

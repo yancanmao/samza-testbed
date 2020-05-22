@@ -22,6 +22,6 @@ public class WordCountSplitterTask implements StreamTask, Serializable {
 
     private void delay() {
         Long start = System.nanoTime();
-        while (System.nanoTime() - start < 400000) {}
+        while (System.nanoTime() - start < 325000) {}
     }
 }
