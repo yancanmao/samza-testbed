@@ -124,7 +124,9 @@ BASE=${INPUT_BASE}
 
 generate
 
-python -c 'import time; time.sleep(780)'
+#python -c 'import time; time.sleep(780)'
+python -c 'import time; time.sleep(4830)'
+
 
 # run 120s
 #python -c 'import time; time.sleep(500)'
@@ -154,6 +156,5 @@ bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${counterappid} ${localDir}
 cd ${APP_DIR}/wordcount_scripts/draw
 python2 RateAndWindowDelayCounter.py ${EXP_NAME2}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME2}
-
 python2 WordCountViolation.py ${EXP_NAME} ${EXP_NAME2} ${INPUT_L} ${INPUT_Ls}
 

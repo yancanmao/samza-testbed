@@ -6,9 +6,9 @@ jobname = sys.argv[1]
 input_file = '/home/samza/GroundTruth/wordcount_result/' + jobname + "/000001.txt"
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [0000, 755]
+xaxes = [0000, 4855]
 deltaT = 100
-startline = [[155, 155], [0, 10000000]]
+startline = [[1255, 1255], [0, 10000000]]
 executorsFigureFlag = True
 
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']

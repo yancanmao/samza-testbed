@@ -6,7 +6,7 @@ userLatency = 1000
 userWindow = 1000
 base = 1000 #timeslot size
 peakIntervals = [[0, 120], [7200, 7290]]
-calculateInterval = [120, 720]  #The interval we calculate violation percentage from 1st tuple completed, remove initial part
+calculateInterval = [1200, 4800]  #The interval we calculate violation percentage from 1st tuple completed, remove initial part
 #totalLength = 7100
 substreamLatencies = {} # Dict { substreamId : [[Arrival, Completed]...]}
 from os import listdir

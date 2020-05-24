@@ -11,7 +11,7 @@ else:
 userWindow = 1000
 base = 1000 #timeslot size
 peakIntervals = [[0, 120], [7200, 7290]]
-calculateInterval = [120, 720]  #The interval we calculate violation percentage from 1st tuple completed, remove initial part
+calculateInterval = [1200, 4800]  #The interval we calculate violation percentage from 1st tuple completed, remove initial part
 #totalLength = 7100
 splitterLatencies = {} #  {time : [Arrival, Completed]...}
 counterLatencies = {}
@@ -330,7 +330,7 @@ for time in range(xaxes[0], xaxes[1] + 1):
                 tViolation += 1
             if(avgLatency > userLatency):
                 thisViolation += 1
-                print(savg, tavg)
+                print(time,savg, tavg)
                 if(len(thisViolationInterval) > 0 and thisViolationInterval[-1][1] == time - 1):
                     thisViolationInterval[-1][1] = time
                 else:
