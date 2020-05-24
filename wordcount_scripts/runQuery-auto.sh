@@ -7,6 +7,9 @@ APP=$3
 INPUT_CYCLE=$4
 INPUT_BASE=$5
 INPUT_RATE=$6
+INPUT_L=$7
+INPUT_Ls=$8
+INPUT_Lc=$9
 
 function clearEnv() {
     export JAVA_HOME=/home/samza/kit/jdk
@@ -25,7 +28,14 @@ function clearEnv() {
 }
 
 function configApp() {
+    cp ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.requirement.latency"{$2='"$INPUT_Ls"'}1' properties.t1 > properties.t2
+    cp properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-splitter-ss.properties
+
+    cp ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.requirement.latency"{$2='"$INPUT_Lc"'}1' properties.t1 > properties.t2
+    cp properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties
     sed -i -- 's/localhost/'${HOST}'/g' ${APP_DIR}/testbed_1.0.0/target/config/word-count-counter-ss.properties
 }
 
@@ -109,7 +119,7 @@ killApp
 killGenerator
 
 
-EXP_NAME=B${BASE}C${CYCLE}R${RATE}_Splitter_APP${splitterappid}
+EXP_NAME=B${BASE}C${CYCLE}R${RATE}_L${INPUT_L}Ls${INPUT_Ls}_Splitter_APP${splitterappid}
 
 localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME}"
 figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME}"
@@ -121,7 +131,7 @@ python2 RateAndWindowDelay.py ${EXP_NAME}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME}
 
 
-EXP_NAME2=B${BASE}C${CYCLE}R${RATE}_Counter_APP${counterappid}
+EXP_NAME2=B${BASE}C${CYCLE}R${RATE}_L${INPUT_L}Ls${INPUT_Ls}_Counter_APP${counterappid}
 
 localDir="/home/samza/GroundTruth/wordcount_result/${EXP_NAME2}"
 figDir="${APP_DIR}/wordcount_scripts/draw/figures/${EXP_NAME2}"
@@ -129,8 +139,8 @@ mkdir ${figDir}
 bash ${APP_DIR}/wordcount_scripts/runScpr.sh ${counterappid} ${localDir}
 
 cd ${APP_DIR}/wordcount_scripts/draw
-python2 RateAndWindowDelay.py ${EXP_NAME2}
+python2 RateAndWindowDelayCounter.py ${EXP_NAME2}
 python2 ViolationsAndUsageFromGroundTruth.py ${EXP_NAME2}
 
-python2 WordCountViolation.py ${EXP_NAME} ${EXP_NAME2}
+python2 WordCountViolation.py ${EXP_NAME} ${EXP_NAME2} ${INPUT_L} ${INPUT_Ls}
 

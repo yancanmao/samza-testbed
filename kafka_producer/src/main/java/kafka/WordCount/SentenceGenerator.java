@@ -21,7 +21,7 @@ public class SentenceGenerator {
 //    private final int sentenceRate;
 
     /** the length of each sentence (in chars) **/
-    private final int sentenceSize = 200;
+    private final int sentenceSize = 100;
 
     private final RandomSentenceGenerator generator;
 

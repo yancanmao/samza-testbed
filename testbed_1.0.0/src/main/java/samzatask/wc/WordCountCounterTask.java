@@ -40,6 +40,6 @@ public class WordCountCounterTask implements StreamTask, InitableTask, Serializa
 
     private void delay() {
         Long start = System.nanoTime();
-        while (System.nanoTime() - start < 12500) {}
+        while (System.nanoTime() - start < 65000) {}
     }
 }
