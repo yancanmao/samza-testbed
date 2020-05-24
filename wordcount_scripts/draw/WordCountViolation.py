@@ -292,7 +292,7 @@ thisViolation = 0
 thisViolationInterval = []
 sViolation = 0
 tViolation = 0
-#ttt = 0
+ttt = 0
 for time in range(xaxes[0], xaxes[1] + 1):
     timeslot = (time * base + startTime)
     if(timeslot in splitterLatencies):
