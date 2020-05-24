@@ -105,8 +105,8 @@ then
     uploadHDFS
 fi
 
-Ns=5
-Nc=10
+Ns=10
+Nc=20
 
 clearEnv
 configApp
