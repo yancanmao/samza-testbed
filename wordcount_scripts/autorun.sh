@@ -1,9 +1,9 @@
 #!/bin/bash
 AVGRATE=16667
 for cycle in 600; do
-        for range in 4167; do
+        for range in 5556; do
             for L in 2000; do
-                for Ls in 1500; do
+                for Ls in 500; do
                     for times in {1}; do
         		        base=`expr ${AVGRATE} - ${range}`
                         Lc=`expr ${L} - ${Ls}`
