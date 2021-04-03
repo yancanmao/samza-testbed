@@ -51,7 +51,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
     private static final String FILTER_KEY3 = "";
 
     private final Config config;
-    private static final int DefaultDelay = 5;
+    private static final int DefaultDelay = 5000;
 
     private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "stock_cj");
     private KeyValueStore<String, HashMap<Integer, ArrayList<Order>>> stockExchangeMapSell;
@@ -122,7 +122,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
                 insertPool(curOrder, orderArr[Sec_Code], orderArr[Trade_Dir]);
             }
         } else {
-            delay(config.getInt("job.delay.time.ms", DefaultDelay));
+            delay(config.getInt("job.delay.time.us", DefaultDelay));
             matchedResult = continuousStockExchange(orderArr, orderArr[Trade_Dir]);
         }
 
@@ -579,7 +579,7 @@ public class StockExchangeTask implements StreamTask, InitableTask, Serializable
 
     private void delay(int interval) {
         Double ranN = randomGen.nextGaussian(interval, 1);
-        ranN = ranN*1000000;
+        ranN = ranN*1000;
         long delay = ranN.intValue();
         if (delay < 0) delay = 6000000;
         Long start = System.nanoTime();
