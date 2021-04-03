@@ -70,6 +70,10 @@ public class Query2 implements StreamApplication, Serializable {
         OutputStream<KV<String, String>> results = appDescriptor.getOutputStream(outputDescriptor);
 
         bids
+		.map(bid -> {
+		    delay(200000, 1);
+		    return bid;
+		})
                 .filter(bid -> {
                     // different host, have different delay
                     return bid.getAuction() % 1007 == 0 || bid.getAuction() % 1020 == 0

@@ -7,6 +7,8 @@ APP=$3
 INPUT_CYCLE=$4
 INPUT_BASE=$5
 INPUT_RATE=$6
+USER_L=$7
+MIGRATION_T=$8
 # heterogeneous
 #delayGood=$7
 #delayBad=$8
@@ -36,6 +38,8 @@ function configApp() {
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.good.ratio"{$2='"$ratioGood"'}1' properties.t1 > properties.t2
     awk -F"=" 'BEGIN{OFS=FS} $1=="task.bad.ratio"{$2='"$ratioBad"'}1' properties.t2 > properties.t1
     awk -F"=" 'BEGIN{OFS=FS} $1=="job.container.count"{$2='"$N"'}1' properties.t1 > properties.t2
+    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.system.maxmigrationtime"{$2='"$MIGRATION_T"'}1' properties.t2 > properties.t1
+    awk -F"=" 'BEGIN{OFS=FS} $1=="streamswitch.requirement.latency"{$2='"$USER_L"'}1' properties.t1 > properties.t2
     rm properties.t1
     mv properties.t2 ${APP_DIR}/testbed_1.0.0/target/config/nexmark-q${APP}.properties
 }
@@ -160,10 +164,10 @@ for delayGood in 230000; do #1/3, 1/2, 2, 3 #720000, 480000, 230000, 115000, 750
     # python -c 'import time; time.sleep(1380)'
 
     # run 60min
-    python -c 'import time; time.sleep(3780)'
+    #python -c 'import time; time.sleep(3780)'
 
     # run 240min
-    #python -c 'import time; time.sleep(14580)'
+    python -c 'import time; time.sleep(14580)'
 
 
     # run 120s
@@ -172,7 +176,7 @@ for delayGood in 230000; do #1/3, 1/2, 2, 3 #720000, 480000, 230000, 115000, 750
     killGenerator
 
 
-    EXP_NAME=B${BASE}C${CYCLE}R${RATE}_N${N}_D${delayGood}_APP${appid}_backlogTriggerAlgorithm_freshed_interval1s_migrationTime750_1hour_IgnoreInvalidSubstreams
+    EXP_NAME=B${BASE}C${CYCLE}R${RATE}_N${N}_D${delayGood}_L${USER_L}_Tm${MIGRATION_T}_APP${appid}_backlogTriggerAlgorithm_freshed_interval1s_migrationTime750_1hour_IgnoreInvalidSubstreams
 
     localDir="/home/samza/GroundTruth/nexmark_result/${EXP_NAME}"
     figDir="${APP_DIR}/nexmark_scripts/draw/figures/${EXP_NAME}"

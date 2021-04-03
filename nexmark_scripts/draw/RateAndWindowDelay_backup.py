@@ -211,33 +211,16 @@ with open(input_file) as f:
         #Add migration marker
         if (split[0] == 'Migration!'):
             j = split.index("time:")
-            if (not split[j + 4].startswith('[')):
-                src = split[j + 4]
-                time = (long(split[j + 1]) - initialTime) / base
-                tgt = split[j + 7].rstrip()
-                if (src not in migrationDecisionTime):
-                    migrationDecisionTime[src] = []
-                migrationDecisionTime[src] += [time]
-                if (tgt not in migrationDecisionTime):
-                    migrationDecisionTime[tgt] = []
-                migrationDecisionTime[tgt] += [-time]
-                print(str(src) + ' !!! ' + str(tgt))
-            else:  # Multi source and target
-                mid = split[j + 4:].index('to')
-                srcs = [split[tt].rstrip().replace('[', '').replace(']', '').replace(',', '') for tt in
-                        range(j + 4, j + 4 + mid)]
-                tgts = [split[tt].rstrip().replace('[', '').replace(']', '').replace(',', '') for tt in
-                        range(j + 4 + mid + 2, len(split))]
-                time = (long(split[j + 1]) - initialTime) / base
-                for t in srcs:
-                    if (t not in migrationDecisionTime):
-                        migrationDecisionTime[t] = []
-                    migrationDecisionTime[t] += [time]
-                for t in tgts:
-                    if (t not in migrationDecisionTime):
-                        migrationDecisionTime[t] = []
-                    migrationDecisionTime[t] += [-time]
-                print(str(srcs) + ' !!! ' + str(tgts))
+            src = split[j+4]
+            tgt = split[j+7].rstrip()
+            time = (long(split[j+1]) - initialTime)/base
+            if(src not in migrationDecisionTime):
+                migrationDecisionTime[src] = []
+            migrationDecisionTime[src] += [time]
+            if(tgt not in migrationDecisionTime):
+                migrationDecisionTime[tgt] = []
+            migrationDecisionTime[tgt] += [-time]
+            print(src + ' !!! ' + tgt)
 
             decisionT += [time]
             if(split[1] == 'Scale' and split[2] == 'in'):
@@ -254,65 +237,29 @@ with open(input_file) as f:
 
         if (split[0] == 'Executors' and split[1] == 'stopped'):
             i = split.index('from')
-            if (not split[i + 1].startswith('[')):
-                src = split[i + 1]
-                tgt = split[i + 3].rstrip()
-                print('Migration complete from ' + src + ' to ' + tgt)
-                time = (long(split[4]) - initialTime) / base
-                if (src not in migrationDeployTime):
-                    migrationDeployTime[src] = []
-                migrationDeployTime[src] += [time]
-                if (tgt not in migrationDeployTime):
-                    migrationDeployTime[tgt] = []
-                migrationDeployTime[tgt] += [-time]
-                if (len(numberOfOEs) == 0):
-                    numberOfOEs += [len(containerArrivalRate)]
-                    numberOfOEsT += [0]
-                if (split[6] == 'scale-in'):
-                    numberOfOEs += [numberOfOEs[-1]]
-                    numberOfOEsT += [time]
-                    numberOfOEs += [numberOfOEs[-1] - 1]
-                    numberOfOEsT += [time]
-                if (split[6] == 'scale-out'):
-                    numberOfOEs += [numberOfOEs[-1]]
-                    numberOfOEsT += [time]
-                    numberOfOEs += [numberOfOEs[-1] + 1]
-                    numberOfOEsT += [time]
-            else:  # multi source and target
-                mid = split[i + 1:].index('to')
-                if (',new' not in split):
-                    tgts = [split[tt].rstrip().replace('[', '').replace(']', '').replace(',', '') for tt in
-                            range(i + 1 + mid + 1, len(split))]
-                else:  # Scale-out mix load-balance
-                    tmid = split[mid + 1:].index(',new')
-                    tgts = [split[tt].rstrip().replace('[', '').replace(']', '').replace(',', '') for tt in
-                            range(mid + 1 + tmid + 1, len(split))]
-                    print('tgt=' + str(tgts))
-                srcs = [split[tt].rstrip().replace('[', '').replace(']', '').replace(',', '') for tt in
-                        range(i + 1, i + 1 + mid)]
-                print('Migration complete from ' + str(srcs) + ' to ' + str(tgts))
-                time = (long(split[4]) - initialTime) / base
-                for t in srcs:
-                    if (t not in migrationDeployTime):
-                        migrationDeployTime[t] = []
-                    migrationDeployTime[t] += [time]
-                for t in tgts:
-                    if (t not in migrationDeployTime):
-                        migrationDeployTime[t] = []
-                    migrationDeployTime[t] += [-time]
-                if (len(numberOfOEs) == 0):
-                    numberOfOEs += [len(containerArrivalRate)]
-                    numberOfOEsT += [0]
-                if (split[6] == 'scale-in'):
-                    numberOfOEs += [numberOfOEs[-1]]
-                    numberOfOEsT += [time]
-                    numberOfOEs += [numberOfOEs[-1] - len(srcs)]
-                    numberOfOEsT += [time]
-                if (split[6] == 'scale-out'):
-                    numberOfOEs += [numberOfOEs[-1]]
-                    numberOfOEsT += [time]
-                    numberOfOEs += [numberOfOEs[-1] + len(tgts)]
-                    numberOfOEsT += [time]
+            src = split[i+1]
+            tgt = split[i+3].rstrip()
+            print('Migration complete from ' + src + ' to ' + tgt)
+            time = (long(split[4]) - initialTime)/base
+            if(src not in migrationDeployTime):
+                migrationDeployTime[src] = []
+            migrationDeployTime[src] += [time]
+            if (tgt not in migrationDeployTime):
+                migrationDeployTime[tgt] = []
+            migrationDeployTime[tgt] += [-time]
+            if(len(numberOfOEs) == 0):
+                numberOfOEs += [len(containerArrivalRate)]
+                numberOfOEsT += [0]
+            if(split[6] == 'scale-in'):
+                numberOfOEs += [numberOfOEs[-1]]
+                numberOfOEsT += [time]
+                numberOfOEs += [numberOfOEs[-1] - 1]
+                numberOfOEsT += [time]
+            if(split[6] == 'scale-out'):
+                numberOfOEs += [numberOfOEs[-1]]
+                numberOfOEsT += [time]
+                numberOfOEs += [numberOfOEs[-1] + 1]
+                numberOfOEsT += [time]
 
 import numpy as np
 import matplotlib

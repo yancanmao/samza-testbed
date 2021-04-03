@@ -6,10 +6,10 @@ jobname = sys.argv[1]
 input_file = '/home/samza/GroundTruth/nexmark_result/' + jobname + "/000001.txt"
 # input_file = 'GroundTruth/stdout'
 output_path = 'figures/' + jobname + '/'
-xaxes = [0000, 755]
+xaxes = [0, 1955]#[0, 1355]#[0000, 755]
 deltaT = 100
 startline = [[155, 155], [0, 10000000]]
-executorsFigureFlag = True
+executorsFigureFlag = False
 
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 lineType = ['--', '-.', ':']
@@ -354,150 +354,8 @@ def addMigrationLine(Id, ly):
           
     return lines
 
-import collections
-
-#Parameters for figure size
-
-
-if(executorsFigureFlag):
-    #Arrival Rate and Processing Rate
-    numberOfContainers = len(containerArrivalRate)
-    index = 1
-    sortedIds = sorted(containerArrivalRate)
-    maxId = min(len(sortedIds), 25)
-    fig = plt.figure(figsize=(45, 10 * maxId))
-    for Id in sortedIds[:maxId]:
-        print('Draw arrival rate: {0} {1}'.format(index, Id))
-        plt.subplot(numberOfContainers, 1, index)
-        index += 1
-        legend = ['Arrival Rate', 'Processing Rate']
-        plt.plot(containerArrivalRateT[Id], containerArrivalRate[Id],'r^', markersize=1)
-        plt.plot(containerServiceRateT[Id],containerServiceRate[Id],'bs', markersize=1)
-        plt.plot(startline[0], startline[1], 'r')
-        lines = addMigrationLine(Id, 1000)
-        for line in lines:
-            plt.plot(line[0], line[1], linewidth=3.0, color=line[2])
-        plt.legend(legend, loc='upper left')
-        plt.xlabel('Index (100ms)')
-        plt.ylabel('Rate (messages per second)')
-        plt.title('Container ' + Id + ' Arrival and Service Rate')
-        axes = plt.gca()
-        axes.set_xlim([xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT])
-        #axes.set_yscale('log')
-        axes.set_ylim([0, 20000])
-#        axes.set_yticks([-10000, 0, 10000, 20000, 30000, 40000, 50000, 60000])
-        #axes.set_yticks([1, 10, 100, 1000, 10000, 100000, 1000000])
-        import matplotlib.ticker as ticker
-        #axes.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
-        #plt.show()
-        plt.grid(True)
-    import os
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    plt.savefig(output_path + 'ContainerArrivalAndServiceRate.png')
-    plt.close(fig)
-
-# Utilization
-if (False):
-    inputFile = 'GroundTruth/1h_32_L1T10A0.5/samza-job-coordinator.log'
-    utilizationT = {}
-    utilization = {}
-    startTime = -1
-    with open(inputFile) as f:
-        lines = f.readlines()
-        for i in range(0, len(lines)):
-            line = lines[i]
-            split = line.rstrip().split(' ')
-            counter += 1
-            if (counter % 50000 == 0):
-                print("Processed to line:" + str(counter))
-            if (len(split) > 6 and split[5] == 'Retrieved' and split[6] == 'Metrics:'):
-                startPoint = line.find('Utilization={')
-                endPoint = line.find('}', startPoint)
-                ttime = split[1]
-                time = sum(float(x) * 60 ** i for i, x in enumerate(reversed(ttime.split(":")))) * 10
-                if (startTime == -1):
-                    startTime = time
-                time -= startTime
-                t = line[startPoint + len('Utilization={'): endPoint].split(', ')
-                for tt in t:
-                    ttt = tt.split('=')
-                    if (ttt[0] not in utilizationT):
-                        utilizationT[ttt[0]] = []
-                        utilization[ttt[0]] = []
-                    utilizationT[ttt[0]] += [time]
-                    utilization[ttt[0]] += [float(ttt[1])]
-    import numpy as np
-    import matplotlib.pyplot as plt
-    #print(utilizationT)
-    #print(utilization)
-    numberOfContainers = len(utilization)
-    index = 1
-    sortedIds = sorted(utilization)
-    maxId = min(len(sortedIds), 30)
-    fig = plt.figure(figsize=(45, 10 * min(maxId, 30)))
-    for Id in sortedIds[:min(maxId, 30)]:
-        print('Draw utilization: {0} {1}'.format(index, Id))
-        plt.subplot(numberOfContainers, 1, index)
-        index += 1
-        legend = ['Arrival Rate', 'Processing Rate']
-        plt.plot(utilizationT[Id], utilization[Id], 'b^',markersize=1)
-        lines = addMigrationLine(Id, 0.3)
-        for line in lines:
-            plt.plot(line[0], line[1], linewidth=3.0, color=line[2])
-        plt.legend(legend, loc='upper left')
-        plt.xlabel('Index (100ms)')
-        plt.ylabel('Utilization (percentage)')
-        plt.title('Container ' + Id + ' Utilization')
-        axes = plt.gca()
-        axes.set_xlim([xaxes[0] * 10, xaxes[1] * 10])
-        axes.set_ylim([0.00000001, 1.0])
-        axes.set_yscale('log')
-        import matplotlib.ticker as ticker
-
-        # axes.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
-        # plt.show()
-        plt.grid(True)
-    import os
-
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    plt.savefig(output_path + 'ContainerUtilization.png')
-    plt.close(fig)
-
-if(executorsFigureFlag):
-    #Delays
-    fig = plt.figure(figsize=(45, 10 * maxId))
-    index = 1
-    sortedIds = sorted(containerWindowDelay)
-    for Id in sortedIds[:maxId]:
-        print('Draw window delay: {0} {1}'.format(index, Id))
-        plt.subplot(numberOfContainers, 1, index)
-        index += 1
-        #readContainerRealWindowDelay(Id)
-        legend = ['Window Delay', #'Real Window Delay',
-                   'Long Term Delay']
-        #fig = plt.figure(figsize=(25,15))
-
-        plt.plot(containerWindowDelayT[Id], containerWindowDelay[Id],'bs', markersize=1)
-        plt.plot(containerLongtermDelayT[Id], containerLongtermDelay[Id], 'cd', markersize=1)
-        plt.plot(startline[0], startline[1], 'r') 
-        lines = addMigrationLine(Id, 50000)
-        for line in lines:
-            plt.plot(line[0], line[1], linewidth=3.0, color=line[2])
-        plt.legend(legend, loc='upper left')
-        plt.xlabel('Index (x100ms)')
-        plt.ylabel('Delay (ms)')
-        axes = plt.gca()
-        axes.set_xlim(xaxes[0] * 1000 / deltaT, xaxes[1] * 1000 / deltaT)
-        axes.set_ylim([1,100000])
-        axes.set_yticks([1, 10, 100, 1000, 10000, 100000])
-        axes.set_yscale('log')
-        plt.title('Container ' + Id + ' Window Delay')
-        #plt.show()
-        plt.grid(True)
-    plt.savefig(output_path + jobname + '_ContainerWindowDelay.png')
-    plt.close(fig)
+from ViolationIntervalFigure import getViolationPerTimeSlot
+violationTimeslot = getViolationPerTimeSlot(jobname)
 
 # Number of OEs
 print("Draw # of OEs")
@@ -519,7 +377,9 @@ fig = plt.figure(figsize=(60,30))
 numberOfOEsT = [i * deltaT / 1000.0 for i in numberOfOEsT]
 plt.plot(numberOfOEsT, numberOfOEs, 'b')
 plt.plot(startline[0], startline[1], 'r')
- 
+#Violations
+plt.plot([x + 35 for x in violationTimeslot.keys()], violationTimeslot.values(), 'go', markersize=5)
+
 #print(decisionT)
 #print(numberOfOEsT)
 # Add decision marker
@@ -551,49 +411,18 @@ for i in range(0, len(numberOfSevereT)):
 plt.legend(legend, loc='upper left')
 plt.grid(True)
 axes = plt.gca()
-maxOEs = 32
+maxOEs = 65
 axes.set_yticks(np.arange(0, maxOEs))
+axes.set_xticks(np.arange(0, xaxes[1], 20 ))#755, 20))
 axes.set_xlim(xaxes)
 axes.set_ylim([0,maxOEs + 1])
 plt.xlabel('Index (s)')
 plt.ylabel('# of Running OEs')
 plt.title('Number of OEs')
-plt.savefig(output_path + jobname + '_NumberOfOE.png')
+plt.savefig(output_path + jobname + '_NumberOfOEwithV.png')
 plt.close(fig)
 
-#Calculate avg # of OEs
-sumOEs = 0
-for i in range(1, len(numberOfOEsT)):
-    LL = numberOfOEsT[i-1]
-    RR = numberOfOEsT[i]
-    if(RR > xaxes[1]):
-        RR = xaxes[1]
-    if(LL < startline[0][0]):
-        LL = startline[0][0]
-    print(LL, RR)
-    if(LL <= RR):
-        sumOEs += numberOfOEs[i] * (LL - RR)
-avgOEs = sumOEs / float(startline[0][0] - xaxes[1])
-print("Avg number of OEs=" + str(avgOEs))
-ret.append(avgOEs)
-#Calculate scale-in scale-out load-balance ratio
-numScaleIn = 0
-numScaleOut = 0
-numLoadBalance = 0
-for i in range(0, len(decision)):
-    if(decisionT[i] <= xaxes[1] and decisionT[i] >= startline[0][0]):
-        if(decision[i] == 0):
-            numLoadBalance += 1
-        elif(decision[i] == 1):
-            numScaleOut += 1
-        else:
-            numScaleIn += 1
-print("Load-balance, Scale in, Scale out=", numLoadBalance, numScaleIn, numScaleOut)
-ret.append(numLoadBalance)
-ret.append(numScaleIn)
-ret.append(numScaleOut)
-
-#Draw total arrival rate
+    #Draw total arrival rate
 print("Draw total arrival rate")
 arrivalRate = []
 arrivalRateT = []
@@ -603,43 +432,31 @@ for x in sorted(totalArrivalRate):
 
 legend = ['Arrival Rate']
 fig = plt.figure(figsize=(60,40))
+ax = fig.add_subplot(111)
 arrivalRateT = [i * deltaT / 1000.0 for i in arrivalRateT]
-plt.plot(arrivalRateT, arrivalRate , 'b^', markersize=1)
-plt.plot(startline[0], startline[1], 'r')
-plt.legend(legend, loc='upper left')
+ax.plot(arrivalRateT, arrivalRate , 'b^', markersize=1)
+ax.plot(startline[0], startline[1], 'r')
+
+#Violation
+ax2 = plt.twinx()
+ax2.plot([x + 35 for x in violationTimeslot.keys()], violationTimeslot.values(), 'go', markersize=5)
+ax2.set_ylim([0, 33])
+ax2.grid(True)
+ax2.set_xlim(xaxes)
+ax2.set_xticks(np.arange(0, xaxes[1], 20))
+ax2.set_yticks(np.arange(0, 33, 2))
+
+ax.legend(legend, loc='upper left')
 #print(arrivalRateT, arrivalRate)
-plt.grid(True)
-axes = plt.gca()
-axes.set_xlim(xaxes)
+ax.grid(True)
+ax.set_xlim(xaxes)
+ax.set_xticks(np.arange(0, xaxes[1], 20))
 #axes.set_yscale('log')
 # axes.set_yticks([1, 10000, 100000, 500000])
-axes.set_ylim([0, 100000])
-plt.xlabel('Index (s)')
-plt.ylabel('Rate (messages per second)')
+ax.set_ylim([0, 60000])
+ax.set_xlabel('Index (s)')
+ax.set_ylabel('Rate (messages per second)')
 plt.title('Total Arrival Rate')
-plt.savefig(output_path + jobname + '_TotalArrivalRate.png')
+plt.savefig(output_path + jobname + '_TotalArrivalRateWithV.png')
 plt.close(fig)
-
-#Draw worst delay
-legend = ['Window Delay', 'Real Window Delay']
-fig = plt.figure(figsize=(60,40))
-overallWindowDelayT = [i * deltaT / 1000.0 for i in overallWindowDelayT]
-overallWindowDelay = [i / 1000 for i in overallWindowDelay]
-plt.plot(overallWindowDelayT, overallWindowDelay, 'bs')#, containerRealWindowDelayT[Id], containerRealWindowDelay[Id], 'r^')
-plt.plot(startline[0], startline[1], 'r')
-plt.legend(legend, loc='upper left')
-plt.xlabel('Index (s)')
-plt.ylabel('Delay (s)')
-axes = plt.gca()
-axes.set_xlim(xaxes)
-axes.set_ylim([1, 100000])
-axes.set_yscale('log')
-plt.title('Overall Window Delay')
-plt.grid(True)
-plt.savefig(output_path + jobname + '_WorstWindowDelay.png')
-plt.close(fig)
-txtOutputFile = 'nexmarkSuccessRate.txt'
-with open(txtOutputFile, 'a') as f:
-    f.write("%s\n%.3f\t%d\t%d\t%d\n" % (jobname, ret[0], ret[1], ret[2], ret[3]))
-
 
